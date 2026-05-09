@@ -1,0 +1,24 @@
+@import "tailwindcss";
+@import "@workspace/ui/globals.css";
+
+@source "../../packages/ui/src/**/*.{ts,tsx}";
+@source "./**/*.{ts,tsx}";
+
+@theme {
+  --font-sans: var(--font-family, var(--font-sans));
+}
+
+:root {
+  --font-sans: var(--noto-sans);
+  --font-mono: var(--geist-mono);
+}
+
+[data-font="sans"] { --font-family: var(--font-sans); }
+[data-font="mono"] { --font-family: var(--font-mono); }
+[data-font="serif"] { --font-family: Georgia, serif; }
+
+@layer base {
+  body {
+    font-family: var(--font-family, var(--font-sans));
+  }
+}

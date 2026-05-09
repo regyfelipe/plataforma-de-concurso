@@ -1,0 +1,23 @@
+/* packages/ui/src/styles/themes.css */
+
+/* Agora os temas são nativos do workspace UI */
+@import "./themes/stone.css";
+@import "./themes/cyan.css";
+@import "./themes/blue.css";
+@import "./themes/ambar.css";
+@import "./themes/emerald.css";
+@import "./themes/fuchsia.css";
+@import "./themes/green.css";
+@import "./themes/indigo.css";
+@import "./themes/pink.css";
+@import "./themes/neutral.css";
+
+/* Novos Temas OKLCH (V3) - Experiências Completas */
+@import "./themesV3/blue.css";
+@import "./themesV3/green.css";
+@import "./themesV3/neutral.css";
+@import "./themesV3/orange.css";
+@import "./themesV3/red.css";
+@import "./themesV3/rose.css";
+@import "./themesV3/violet.css";
+@import "./themesV3/yellow.css";

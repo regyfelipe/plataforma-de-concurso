@@ -1,0 +1,13 @@
+/* apps/web/app/themes.css */
+
+/* Este arquivo agora apenas importa os valores das variáveis dos temas */
+@import "../registry/themes/stone.css";
+@import "../registry/themes/cyan.css";
+@import "../registry/themes/blue.css";
+@import "../registry/themes/ambar.css";
+@import "../registry/themes/emerald.css";
+@import "../registry/themes/fuchsia.css";
+@import "../registry/themes/green.css";
+@import "../registry/themes/indigo.css";
+@import "../registry/themes/pink.css";
+@import "../registry/themes/neutral.css";

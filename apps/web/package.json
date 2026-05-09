@@ -12,12 +12,24 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1045.0",
+    "@better-auth/prisma-adapter": "^1.6.9",
+    "@tabler/icons-react": "^3.43.0",
+    "@tanstack/react-query": "^5.100.9",
+    "@tiptap/react": "^3.22.5",
+    "@tiptap/starter-kit": "^3.22.5",
     "@workspace/ui": "*",
+    "better-auth": "^1.6.9",
     "lucide-react": "^1.14.0",
+    "mercadopago": "^2.12.0",
     "next": "16.1.6",
     "next-themes": "^0.4.6",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "recharts": "^3.8.1",
+    "sonner": "^2.0.1",
+    "zod": "^4.4.3",
+    "zustand": "^5.0.13"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
