@@ -59,6 +59,15 @@ export function CreateHierarquiaForm({
     tipo === "topico"
       ? assuntos.find((p) => p.id === parentId)
       : topicos.find((p) => p.id === parentId)
+  const parentLabel = tipo === "topico"
+    ? (() => {
+        const parent = parentSelecionado as AssuntoOption | undefined
+        return parent ? `${parent.nome} (${parent.disciplina.nome})` : undefined
+      })()
+    : (() => {
+        const parent = parentSelecionado as TopicoOption | undefined
+        return parent ? `${parent.nome} (${parent.assunto.disciplina.nome})` : undefined
+      })()
 
   const selectTipo = (nextTipo: "topico" | "subtopico") => {
     setTipo(nextTipo)
@@ -132,20 +141,14 @@ export function CreateHierarquiaForm({
                   Selecionar {tipo === "topico" ? "Assunto Pai" : "Tópico Pai"}
                 </Label>
 
-                <Select value={parentId} onValueChange={setParentId} required>
+                <Select value={parentId} onValueChange={(value) => setParentId(value ?? "")} required>
                   <SelectTrigger className="w-full h-10">
                     <SelectValue
                       placeholder={`Selecione o ${
                         tipo === "topico" ? "Assunto" : "Tópico"
                       }`}
                     >
-                      {tipo === "topico"
-                        ? parentSelecionado
-                          ? `${parentSelecionado.nome} (${parentSelecionado.disciplina.nome})`
-                          : undefined
-                        : parentSelecionado
-                          ? `${parentSelecionado.nome} (${parentSelecionado.assunto.disciplina.nome})`
-                          : undefined}
+                      {parentLabel}
                     </SelectValue>
                   </SelectTrigger>
 

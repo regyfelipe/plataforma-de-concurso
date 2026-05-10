@@ -13,6 +13,7 @@ interface CareerCarouselProps {
         sigla?: string
         ano?: number | string
         status?: string
+        logoUrl?: string
         icon?: "shield" | "scale" | "landmark" | "target"
     }[]
 }
@@ -28,17 +29,17 @@ export function CareerCarousel({ activeId = 'all', onSelect, concursos }: Career
     const scrollRef = React.useRef<HTMLDivElement>(null)
     const items = concursos && concursos.length > 0
         ? [
-            { id: "all", name: "Todos", displayName: "Todos", displayYear: "", status: "GERAL", icon: Target },
+            { id: "all", name: "Todos", displayName: "Todos", displayYear: "", status: "GERAL", icon: Target, logoUrl: "" },
             ...concursos.map((concurso) => ({
                 ...concurso,
-                displayName: concurso.sigla ,
+                displayName: concurso.sigla || concurso.name,
                 displayYear: concurso.ano || "---",
                 status: concurso.status ?? "CONCURSO",
                 icon: ICONS[concurso.icon ?? "landmark"],
             })),
         ]
         : [
-            { id: "all", name: "Todos", displayName: "Todos", displayYear: "", status: "GERAL", icon: Target },
+            { id: "all", name: "Todos", displayName: "Todos", displayYear: "", status: "GERAL", icon: Target, logoUrl: "" },
         ]
 
     const scroll = (direction: 'left' | 'right') => {
@@ -81,8 +82,12 @@ export function CareerCarousel({ activeId = 'all', onSelect, concursos }: Career
                                         : "bg-muted/5 border-border/40 hover:border-primary/20 hover:bg-muted/10"
                                 }`}
                             >
-                                <div className={`p-3 rounded-2xl mb-2 transition-colors ${isActive ? "bg-primary/5" : "bg-muted/5"}`}>
-                                    <Icon className={`w-8 h-8 ${isActive ? "text-primary" : "text-muted-foreground/30"}`} />
+                                <div className={`w-14 h-14 rounded-2xl mb-2 transition-all overflow-hidden border flex items-center justify-center ${isActive ? "bg-primary/5 border-primary/20 scale-110" : "bg-muted/5 border-border/10"}`}>
+                                    {concurso.logoUrl ? (
+                                        <img src={concurso.logoUrl} alt={concurso.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <Icon className={`w-6 h-6 ${isActive ? "text-primary" : "text-muted-foreground/30"}`} />
+                                    )}
                                 </div>
                                 
                                 <span className={`text-sm font-black tracking-tight ${isActive ? "text-foreground" : "text-muted-foreground/80"}`}>

@@ -60,10 +60,13 @@ export function FilterSelect({
     const getDisplayValue = () => {
         if (selectedValues.length === 0) return placeholder
         if (!isMulti) {
-            return options.find((o) => o.value === selectedValues[0])?.label ?? placeholder
+            return options.find((o) => o.value === selectedValues[0])?.label ?? selectedValues[0] ?? placeholder
         }
         return `${selectedValues.length} selecionado(s)`
     }
+
+    const hasSelection = selectedValues.length > 0
+    const displayValue = getDisplayValue()
 
     return (
         <div className="space-y-1.5 w-full">
@@ -71,9 +74,11 @@ export function FilterSelect({
 
             <Combobox>
                 <ComboboxInput
-                    placeholder={getDisplayValue()}
+                    value={hasSelection ? displayValue : ""}
+                    placeholder={placeholder}
+                    readOnly
                     showTrigger={true}
-                    showClear={selectedValues.length > 0}
+                    showClear={false}
                     disabled={disabled}
                 />
 

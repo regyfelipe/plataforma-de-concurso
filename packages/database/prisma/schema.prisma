@@ -469,7 +469,8 @@ model Dificuldade {
   ativo    Boolean  @default(true)
   criadoEm DateTime @default(now()) @map("criado_em")
 
-  questoes Questao[]
+  questoes  Questao[]
+  cadernos  Caderno[]
 
   @@map("dificuldades")
 }
@@ -492,12 +493,14 @@ model Carreira {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   nome      String   @unique @db.VarChar(100)
   descricao String?
+  iconUrl   String?
   ativo     Boolean  @default(true)
   criadoEm  DateTime @default(now()) @map("criado_em")
 
   perfis    Perfil[]
   concursos Concurso[]
   questoes  Questao[]
+  cadernos  Caderno[]
   rankings  Ranking[]
   simulados Simulado[]
 
@@ -514,6 +517,7 @@ model Concurso {
   nivelId    String?        @map("nivel_id") @db.Uuid
   ano        Int?           @db.SmallInt
   status     StatusConcurso @default(previsto)
+  logoUrl    String?        @map("logo_url")
   ativo      Boolean        @default(true)
   criadoEm   DateTime       @default(now()) @map("criado_em")
 
@@ -521,6 +525,7 @@ model Concurso {
   carreira  Carreira?         @relation(fields: [carreiraId], references: [id], onDelete: SetNull)
   nivel     NivelEducacional? @relation(fields: [nivelId], references: [id], onDelete: SetNull)
   questoes  Questao[]
+  cadernos  Caderno[]
   simulados Simulado[]
 
   @@map("concursos")
@@ -536,6 +541,7 @@ model Disciplina {
 
   assuntos     Assunto[]
   questoes     Questao[]
+  cadernos     Caderno[]
   estatisticas EstatisticaUsuario[]
 
   @@map("disciplinas")
@@ -835,17 +841,30 @@ model Denuncia {
 model Caderno {
   id           String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   usuarioId    String              @map("usuario_id") @db.Uuid
+  carreiraId   String?             @map("carreira_id") @db.Uuid
+  concursoId   String?             @map("concurso_id") @db.Uuid
+  disciplinaId String?             @map("disciplina_id") @db.Uuid
+  dificuldadeId String?            @map("dificuldade_id") @db.Uuid
   nome         String              @db.VarChar(200)
   descricao    String?
   visibilidade VisibilidadeCaderno @default(privado)
   capaUrl      String?             @map("capa_url")
+  anoReferencia Int?               @map("ano_referencia") @db.SmallInt
   criadoEm     DateTime            @default(now()) @map("criado_em")
   atualizadoEm DateTime            @default(now()) @updatedAt @map("atualizado_em")
 
-  usuario  Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  questoes CadernoQuestao[]
+  usuario     Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  carreira    Carreira?        @relation(fields: [carreiraId], references: [id], onDelete: SetNull)
+  concurso    Concurso?        @relation(fields: [concursoId], references: [id], onDelete: SetNull)
+  disciplina  Disciplina?      @relation(fields: [disciplinaId], references: [id], onDelete: SetNull)
+  dificuldade Dificuldade?     @relation(fields: [dificuldadeId], references: [id], onDelete: SetNull)
+  questoes    CadernoQuestao[]
 
   @@index([usuarioId])
+  @@index([carreiraId])
+  @@index([concursoId])
+  @@index([disciplinaId])
+  @@index([dificuldadeId])
   @@map("cadernos")
 }
 

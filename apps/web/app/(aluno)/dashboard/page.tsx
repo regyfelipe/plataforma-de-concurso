@@ -156,7 +156,7 @@ export default async function DashboardPage() {
       discipline: id,
       label: item.label,
       solved: item.solved,
-      fill: CHART_COLORS[index % CHART_COLORS.length],
+      fill: CHART_COLORS[index % CHART_COLORS.length] ?? "#64748b",
     }))
     .sort((a, b) => b.solved - a.solved)
     .slice(0, 5)

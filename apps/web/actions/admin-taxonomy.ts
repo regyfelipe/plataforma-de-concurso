@@ -257,12 +257,13 @@ export async function createAssuntoInline(disciplinaId: string, nome: string) {
   revalidatePath("/admin/assuntos")
 }
 
-export async function createCarreiraInline(nome: string, descricao?: string) {
+export async function createCarreiraInline(nome: string, descricao?: string, iconUrl?: string) {
   await requireAdmin()
   await prisma.carreira.create({
     data: {
       nome,
       descricao: descricao || null,
+      iconUrl: iconUrl || null,
       ativo: true
     }
   })
@@ -321,6 +322,7 @@ export async function createConcursoInline(data: {
   nivelId?: string
   ano?: number
   status: "aberto" | "previsto" | "encerrado"
+  logoUrl?: string
 }) {
   await requireAdmin()
   await prisma.concurso.create({

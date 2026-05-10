@@ -93,7 +93,7 @@ export function CreateAssuntoForm({
 
                   <Select
                     value={disciplinaId}
-                    onValueChange={setDisciplinaId}
+                    onValueChange={(value) => setDisciplinaId(value ?? "")}
                     required
                   >
                     <SelectTrigger className="w-full h-10">

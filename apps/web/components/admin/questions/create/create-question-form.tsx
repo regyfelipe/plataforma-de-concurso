@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Plus, ChevronLeft, ChevronRight, LayoutList, ListOrdered } from "lucide-react"
 import { Progress } from "@workspace/ui/components/progress"
 import { Button } from "@workspace/ui/components/button"
-import { createAdminQuestion } from "@/actions/admin-questions"
+import { createAdminQuestion, updateAdminQuestion } from "@/actions/admin-questions"
 import { QuestionFormActions } from "./question-form-actions"
 import { QuestionClassificationSection, type QuestionTaxonomyOptions } from "./question-classification-section"
 import { QuestionStatementSection } from "./question-statement-section"
@@ -28,59 +28,103 @@ import {
 
 interface CreateQuestionFormProps {
     taxonomy: QuestionTaxonomyOptions
+    initialData?: {
+        id: string
+        disciplinaId?: string | null
+        assuntoId?: string | null
+        topicoId?: string | null
+        subtopicoId?: string | null
+        bancaId?: string | null
+        concursoId?: string | null
+        carreiraId?: string | null
+        nivelId?: string | null
+        dificuldadeId?: string | null
+        tipoId?: string | null
+        cargo?: string | null
+        ano?: number | null
+        isInedita: boolean
+        enunciado: string
+        textoApoio?: string | null
+        resolucao?: string | null
+        videoUrl?: string | null
+        objetivo?: string | null
+        referencia?: string | null
+        dica?: string | null
+        visibilidade: "publica" | "privada" | "restrita"
+        status: "draft" | "published"
+        alternativas: {
+            letter: string
+            text: string
+            isCorrect: boolean
+            explanation?: string | null
+            reference?: string | null
+            tip?: string | null
+        }[]
+    }
 }
 
-export function CreateQuestionForm({ taxonomy }: CreateQuestionFormProps) {
+export function CreateQuestionForm({ taxonomy, initialData }: CreateQuestionFormProps) {
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
+    const isEditing = Boolean(initialData?.id)
     const [isWizardMode, setIsWizardMode] = useState(false)
     const [currentStep, setCurrentStep] = useState(1)
     const [isPreviewOpen, setIsPreviewOpen] = useState(false)
     const [formError, setFormError] = useState<string | null>(null)
     const [showSuccessModal, setShowSuccessModal] = useState(false)
-    const [lastCreatedStatus, setLastCreatedStatus] = useState<'draft' | 'published' | null>(null)
     
     // Estados do Formulário
     const [classification, setClassification] = useState<Record<string, string>>({
-        type: "multipla_escolha",
-        tipoId: "",
-        disciplinaId: "",
-        assuntoId: "",
-        topicoId: "",
-        subtopicoId: "",
-        bancaId: "",
-        concursoId: "",
-        cargo: "",
-        carreiraId: "",
-        nivelId: "",
-        dificuldadeId: "",
-        year: String(new Date().getFullYear()),
-        isUnique: "nao",
+        type: initialData?.tipoId ? (taxonomy.tiposQuestao.find(t => t.id === initialData.tipoId)?.slug || "multipla_escolha") : "multipla_escolha",
+        tipoId: initialData?.tipoId || "",
+        disciplinaId: initialData?.disciplinaId || "",
+        assuntoId: initialData?.assuntoId || "",
+        topicoId: initialData?.topicoId || "",
+        subtopicoId: initialData?.subtopicoId || "",
+        bancaId: initialData?.bancaId || "",
+        concursoId: initialData?.concursoId || "",
+        cargo: initialData?.cargo || "",
+        carreiraId: initialData?.carreiraId || "",
+        nivelId: initialData?.nivelId || "",
+        dificuldadeId: initialData?.dificuldadeId || "",
+        year: initialData?.ano ? String(initialData.ano) : String(new Date().getFullYear()),
+        isUnique: initialData?.isInedita ? "sim" : "nao",
     })
     
     const [statement, setStatement] = useState({
-        supportText: "",
-        commandText: ""
+        supportText: initialData?.textoApoio || "",
+        commandText: initialData?.enunciado || ""
     })
 
-    const [resolution, setResolution] = useState("")
+    const [resolution, setResolution] = useState(initialData?.resolucao || "")
     const [materials, setMaterials] = useState<Record<string, string>>({
-        videoUrl: "",
-        objetivo: "",
-        referencia: "",
-        dica: "",
+        videoUrl: initialData?.videoUrl || "",
+        objetivo: initialData?.objetivo || "",
+        referencia: initialData?.referencia || "",
+        dica: initialData?.dica || "",
     })
     const [settings, setSettings] = useState({
-        isPublic: true,
+        isPublic: initialData?.visibilidade === "publica",
         allowComments: true,
         reviewMode: false,
     })
 
-    const [alternativas, setAlternativas] = useState([
-        { id: "1", letter: "A", text: "", isCorrect: false, explanation: "", reference: "", tip: "" },
-        { id: "2", letter: "B", text: "", isCorrect: false, explanation: "", reference: "", tip: "" },
-        { id: "3", letter: "C", text: "", isCorrect: false, explanation: "", reference: "", tip: "" },
-    ])
+    const [alternativas, setAlternativas] = useState(
+        initialData?.alternativas?.map((alt, i) => ({
+            id: String(i + 1),
+            letter: alt.letter,
+            text: alt.text,
+            isCorrect: alt.isCorrect,
+            explanation: alt.explanation || "",
+            reference: alt.reference || "",
+            tip: alt.tip || ""
+        })) || [
+            { id: "1", letter: "A", text: "", isCorrect: false, explanation: "", reference: "", tip: "" },
+            { id: "2", letter: "B", text: "", isCorrect: false, explanation: "", reference: "", tip: "" },
+            { id: "3", letter: "C", text: "", isCorrect: false, explanation: "", reference: "", tip: "" },
+        ]
+    )
+
 
     const totalSteps = 7
 
@@ -154,7 +198,7 @@ export function CreateQuestionForm({ taxonomy }: CreateQuestionFormProps) {
     }
 
     const handleRemoveAlternative = (id: string) => {
-        if (classification.type.replaceAll("-", "_") === "multipla_escolha" && alternativas.length <= 3) {
+        if ((classification.type ?? "").replaceAll("-", "_") === "multipla_escolha" && alternativas.length <= 3) {
             return
         }
         setAlternativas(prev => {
@@ -203,7 +247,7 @@ export function CreateQuestionForm({ taxonomy }: CreateQuestionFormProps) {
         subtopicoId: classification.subtopicoId || null,
         bancaId: classification.bancaId || null,
         concursoId: classification.concursoId || null,
-        cargo: classification.cargo || null,
+        cargo: classification.cargo || undefined,
         carreiraId: classification.carreiraId || null,
         nivelId: classification.nivelId || null,
         dificuldadeId: classification.dificuldadeId || null,
@@ -218,7 +262,7 @@ export function CreateQuestionForm({ taxonomy }: CreateQuestionFormProps) {
         objetivo: materials.objetivo,
         referencia: materials.referencia,
         dica: materials.dica,
-        visibilidade: settings.isPublic ? "publica" : "privada" as "publica" | "privada",
+        visibilidade: (settings.isPublic ? "publica" : "privada") as "publica" | "privada",
         status,
         alternativas: alternativas.map(({ letter, text, isCorrect, explanation, reference, tip }) => ({
             letter,
@@ -235,15 +279,21 @@ export function CreateQuestionForm({ taxonomy }: CreateQuestionFormProps) {
 
         startTransition(async () => {
             try {
-                await createAdminQuestion(buildPayload(status))
-                
-                if (status === 'published') {
-                    setLastCreatedStatus('published')
-                    setShowSuccessModal(true)
-                } else {
-                    toast.success("Rascunho salvo com sucesso!")
+                if (initialData?.id) {
+                    await updateAdminQuestion(initialData.id, buildPayload(status))
+                    toast.success(status === 'published' ? "Questão atualizada com sucesso!" : "Rascunho atualizado com sucesso!")
                     router.push("/admin/questoes")
                     router.refresh()
+                } else {
+                    await createAdminQuestion(buildPayload(status))
+                    
+                    if (status === 'published') {
+                        setShowSuccessModal(true)
+                    } else {
+                        toast.success("Rascunho salvo com sucesso!")
+                        router.push("/admin/questoes")
+                        router.refresh()
+                    }
                 }
             } catch (error) {
                 const message = error instanceof Error
@@ -338,9 +388,9 @@ export function CreateQuestionForm({ taxonomy }: CreateQuestionFormProps) {
                         onToggleCorrect={handleToggleCorrect}
                         onChangeText={handleTextChange}
                         onRemove={handleRemoveAlternative}
-                        canRemove={classification.type.replaceAll("-", "_") === "multipla_escolha" && alternativas.length > 3}
+                        canRemove={(classification.type ?? "").replaceAll("-", "_") === "multipla_escolha" && alternativas.length > 3}
                     />
-                    {classification.type.replaceAll("-", "_") === "multipla_escolha" && alternativas.length < 5 && (
+                    {(classification.type ?? "").replaceAll("-", "_") === "multipla_escolha" && alternativas.length < 5 && (
                         <div className="flex justify-center -mt-2">
                             <Button 
                                 type="button"
@@ -380,6 +430,7 @@ export function CreateQuestionForm({ taxonomy }: CreateQuestionFormProps) {
                         <QuestionPreviewPanel 
                             onPublish={() => handleSubmit('published')}
                             isSubmitting={isPending}
+                            isEditing={isEditing}
                         />
                     </div>
                     <div>
@@ -401,6 +452,7 @@ export function CreateQuestionForm({ taxonomy }: CreateQuestionFormProps) {
                 onSaveDraft={() => handleSubmit("draft")}
                 onPublish={() => handleSubmit("published")}
                 isSubmitting={isPending}
+                isEditing={isEditing}
             />
 
             <div className="max-w-6xl mx-auto pb-20 px-4">
@@ -473,7 +525,7 @@ export function CreateQuestionForm({ taxonomy }: CreateQuestionFormProps) {
                                         disabled={isPending}
                                         onClick={() => handleSubmit("published")}
                                     >
-                                        Finalizar e Publicar
+                                        {isEditing ? "Finalizar Edição" : "Finalizar e Publicar"}
                                     </Button>
                                 )}
                             </div>

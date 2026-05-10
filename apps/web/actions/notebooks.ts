@@ -1,12 +1,13 @@
 "use server";
 
 import { auth } from "@workspace/auth";
+import { prisma } from "@workspace/database";
 import { headers } from "next/headers";
 import { notebookService } from "@/app/api/notebooks/service";
 import { notebookSchema, NotebookInput } from "./notebooks.schema";
 import { revalidatePath } from "next/cache";
 
-export type ActionResponse<T = any> = {
+export type ActionResponse<T = unknown> = {
   success: boolean;
   message?: string;
   data?: T;
@@ -22,7 +23,19 @@ export async function createNotebookAction(values: NotebookInput): Promise<Actio
     headers: await headers(),
   });
 
-  if (!session || session.user.role !== "admin") {
+  if (!session?.user?.id) {
+    return {
+      success: false,
+      message: "Faça login para criar cadernos oficiais.",
+    };
+  }
+
+  const user = await prisma.usuario.findUnique({
+    where: { id: session.user.id },
+    select: { perfil: true },
+  });
+
+  if (user?.perfil !== "admin") {
     return {
       success: false,
       message: "Acesso negado. Apenas administradores podem criar cadernos oficiais.",
@@ -40,13 +53,25 @@ export async function createNotebookAction(values: NotebookInput): Promise<Actio
   }
 
   try {
-    const { nome, descricao, disciplinaId, concursoId, isPublic } = validatedFields.data;
+    const {
+      nome,
+      descricao,
+      carreiraId,
+      disciplinaId,
+      concursoId,
+      dificuldadeId,
+      anoReferencia,
+      isPublic,
+    } = validatedFields.data;
 
     const result = await notebookService.createNotebook({
       nome,
       descricao,
+      carreiraId: carreiraId || undefined,
       disciplinaId: disciplinaId || undefined,
       concursoId: concursoId || undefined,
+      dificuldadeId: dificuldadeId || undefined,
+      anoReferencia: anoReferencia ?? undefined,
       isPublic,
       userId: session.user.id,
     });
@@ -58,10 +83,10 @@ export async function createNotebookAction(values: NotebookInput): Promise<Actio
       message: "Caderno criado com sucesso!",
       data: result,
     };
-  } catch (error: any) {
+  } catch (error) {
     return {
       success: false,
-      message: error.message || "Erro ao criar caderno.",
+      message: error instanceof Error ? error.message : "Erro ao criar caderno.",
     };
   }
 }

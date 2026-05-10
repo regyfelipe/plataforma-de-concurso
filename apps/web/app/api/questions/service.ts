@@ -1,4 +1,4 @@
-import { questionSchema, QuestionInput } from "./schema";
+import { questionSchema } from "./schema";
 import * as repository from "./repository";
 
 export async function createQuestionService(data: unknown) {

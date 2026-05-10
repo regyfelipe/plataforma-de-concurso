@@ -1,6 +1,7 @@
 "use client"
 
 import { ChevronRight, ChevronDown } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 
 interface StatItemProps {
     rank: number
@@ -47,8 +48,8 @@ function StatItem({ rank, title, stats, percentage, color }: StatItemProps) {
 interface StatColumnProps {
     title: string
     subtitle: string
-    icon: any
-    items: any[]
+    icon: LucideIcon
+    items: Omit<StatItemProps, "rank">[]
     count: number
 }
 
@@ -78,7 +79,7 @@ export function StatPerformanceColumn({ title, subtitle, icon: Icon, items, coun
             </div>
 
             <div className="space-y-1 divide-y divide-border/5">
-                {items.map((item: any, i: number) => (
+                {items.map((item, i) => (
                     <StatItem key={i} rank={i + 1} {...item} />
                 ))}
             </div>
@@ -86,7 +87,7 @@ export function StatPerformanceColumn({ title, subtitle, icon: Icon, items, coun
             <div className="pt-2">
                 <button className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/20 hover:text-primary transition-colors pl-12 group">
                     <ChevronDown className="w-3 h-3 group-hover:translate-y-0.5 transition-transform" /> 
-                    Ver mais {count} {title.split(' ').pop().toLowerCase()}
+                    Ver mais {count} {(title.split(' ').pop() ?? "").toLowerCase()}
                 </button>
             </div>
         </div>

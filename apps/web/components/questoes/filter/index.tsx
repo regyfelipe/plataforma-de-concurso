@@ -39,9 +39,11 @@ interface QuestionFilterOptions {
         sigla?: string
         ano?: number | string
         status?: string
+        logoUrl?: string
         icon?: "shield" | "scale" | "landmark" | "target"
     }[]
     cargos?: FilterOption[]
+    carreiras?: FilterOption[]
     escolaridades?: FilterOption[]
     anos?: FilterOption[]
     dificuldades?: FilterOption[]
@@ -129,15 +131,15 @@ export function QuestionFilter({ options }: QuestionFilterProps) {
                     </div>
 
                     {/* Grid secundário de filtros */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-4 border-t border-border/10">
-                        <FilterSelect label="Bancas" placeholder="FGV, Cebraspe..." options={options?.bancas ?? BANCAS_MOCK} />
-                        <FilterSelect label="Cargo" placeholder="Selecione o cargo" options={options?.cargos ?? CARGOS_MOCK} />
-                        <FilterSelect label="Escolaridade" placeholder="Nível" options={options?.escolaridades ?? ESCOLARIDADE_MOCK} />
-                        <FilterSelect label="Ano" placeholder="2024" options={options?.anos ?? ANOS_MOCK} />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 ">
+                        <FilterSelect label="Bancas" placeholder="Selecione a Bancas" options={options?.bancas ?? BANCAS_MOCK} />
+                        <FilterSelect label="Carreira" placeholder="Selecione a carreira" options={options?.carreiras ?? []} />
+                        <FilterSelect label="Cargo" placeholder="Selecione o cargo" options={options?.cargos ?? []} />
+                        <FilterSelect label="Escolaridade" placeholder="Selecione a Escolaridade" options={options?.escolaridades ?? ESCOLARIDADE_MOCK} />
+                        <FilterSelect label="Ano" placeholder="Selecione o Ano" options={options?.anos ?? ANOS_MOCK} />
                         <FilterSelect label="Número de Alternativas" placeholder="4 ou 5" options={ALTERNATIVAS_MOCK} />
                         <FilterSelect label="Nível de Dificuldade" placeholder="Todos" options={options?.dificuldades ?? DIFICULDADE_MOCK} />
                         <FilterSelect label="Professor Indica" placeholder="Dicas" options={PROFESSOR_INDICA_MOCK} />
-                        <FilterSelect label="Cadernos do Professor" placeholder="Recomendados" options={CADERNOS_PROFESSOR_MOCK} />
                     </div>
 
                     {/* Barra de Ações Inferior */}
@@ -154,18 +156,27 @@ export function QuestionFilter({ options }: QuestionFilterProps) {
                                 </button>
                             </div>
                             
-                            <div className="w-48">
-                                <FilterSelect 
-                                    label="" 
-                                    placeholder="Status" 
-                                    options={[
-                                        { label: "Todas", value: "todas" },
-                                        { label: "Resolvidas", value: "resolvidas" },
-                                        { label: "Não Resolvidas", value: "nao_resolvidas" },
-                                        { label: "Acertei", value: "acertei" },
-                                        { label: "Errei", value: "errei" }
-                                    ]} 
-                                />
+                            <div className="flex items-center gap-3">
+                                <div className="w-48">
+                                    <FilterSelect 
+                                        label="" 
+                                        placeholder="Cadernos do Professor" 
+                                        options={options?.topicos ?? CADERNOS_PROFESSOR_MOCK} 
+                                    />
+                                </div>
+                                <div className="w-48">
+                                    <FilterSelect 
+                                        label="" 
+                                        placeholder="Status" 
+                                        options={[
+                                            { label: "Todas", value: "todas" },
+                                            { label: "Resolvidas", value: "resolvidas" },
+                                            { label: "Não Resolvidas", value: "nao_resolvidas" },
+                                            { label: "Acertei", value: "acertei" },
+                                            { label: "Errei", value: "errei" }
+                                        ]} 
+                                    />
+                                </div>
                             </div>
                         </div>
 

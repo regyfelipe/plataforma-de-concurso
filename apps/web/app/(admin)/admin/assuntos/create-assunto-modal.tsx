@@ -74,7 +74,7 @@ export function CreateAssuntoModal({
                 <BookOpen className="w-3.5 h-3.5 text-muted-foreground" />
                 Disciplina Vinculada
               </Label>
-              <Select value={disciplinaId} onValueChange={setDisciplinaId} required>
+              <Select value={disciplinaId} onValueChange={(value) => setDisciplinaId(value ?? "")} required>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione a Disciplina">
                     {disciplinaSelecionada?.nome}

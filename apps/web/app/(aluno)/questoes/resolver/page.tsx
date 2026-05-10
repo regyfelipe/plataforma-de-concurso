@@ -93,7 +93,7 @@ export default async function Page() {
     prisma.concurso.findMany({
       where: { ativo: true },
       orderBy: [{ ano: "desc" }, { nome: "asc" }],
-      select: { id: true, nome: true, sigla: true, status: true, ano: true },
+      select: { id: true, nome: true, sigla: true, status: true, ano: true, logoUrl: true, cargo: true },
     }),
     prisma.carreira.findMany({
       where: { ativo: true },
@@ -176,15 +176,17 @@ export default async function Page() {
     concursos: concursos.map((concurso) => ({
       id: concurso.id,
       name: concurso.nome,
-      sigla: concurso.sigla,
-      ano: concurso.ano,
+      sigla: concurso.sigla ?? undefined,
+      ano: concurso.ano ?? undefined,
       status: concurso.status?.toUpperCase(),
+      logoUrl: concurso.logoUrl ?? undefined,
       icon: "landmark" as const,
     })),
-    cargos: carreiras.map((carreira) => ({
+    carreiras: carreiras.map((carreira) => ({
       label: carreira.nome,
       value: carreira.id,
     })),
+    cargos: uniqueOptions(concursos.filter(c => c.cargo), (c) => c.cargo, (c) => c.cargo),
     escolaridades: niveis.map((nivel) => ({
       label: nivel.nome,
       value: nivel.id,

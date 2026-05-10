@@ -4,6 +4,7 @@ import { useState } from "react"
 import { X, Filter, Trash2, Edit2, Copy } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Badge } from "@workspace/ui/components/badge"
+import Link from "next/link"
 import { QuestionCard } from "@/components/questoes/card"
 
 type AdminQuestion = React.ComponentProps<typeof QuestionCard>["question"] & {
@@ -94,9 +95,11 @@ export function AdminQuestionsList({ questions, totalPages }: AdminQuestionsList
                             <div key={q.id} className="relative group">
                                 {/* Ações Rápidas Flutuantes de Admin */}
                                 <div className="absolute right-6 top-6 z-10 flex gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
-                                    <Button variant="outline" size="sm" className="h-8 rounded-lg bg-background/80 backdrop-blur border-border/60 text-[9px] font-black uppercase tracking-widest hover:border-primary/40 hover:text-primary">
-                                        <Edit2 className="w-3 h-3 mr-2" /> Editar
-                                    </Button>
+                                    <Link href={`/admin/questoes/editar/${q.id}`}>
+                                        <Button variant="outline" size="sm" className="h-8 rounded-lg bg-background/80 backdrop-blur border-border/60 text-[9px] font-black uppercase tracking-widest hover:border-primary/40 hover:text-primary">
+                                            <Edit2 className="w-3 h-3 mr-2" /> Editar
+                                        </Button>
+                                    </Link>
                                     <Button variant="outline" size="sm" className="h-8 rounded-lg bg-background/80 backdrop-blur border-border/60 text-[9px] font-black uppercase tracking-widest hover:border-primary/40 hover:text-primary">
                                         <Copy className="w-3 h-3 mr-2" /> Duplicar
                                     </Button>

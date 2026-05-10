@@ -22,7 +22,7 @@ export class NotebookService {
       skip,
       take,
       where,
-      orderBy: { createdAt: "desc" },
+      orderBy: { criadoEm: "desc" },
     });
   }
 
@@ -32,8 +32,11 @@ export class NotebookService {
   async createNotebook(data: {
     nome: string;
     descricao?: string;
+    carreiraId?: string;
     disciplinaId?: string;
     concursoId?: string;
+    dificuldadeId?: string;
+    anoReferencia?: number;
     isPublic?: boolean;
     userId: string; // ID do admin criando
   }) {
@@ -41,9 +44,12 @@ export class NotebookService {
     return notebookRepository.create({
       nome: data.nome,
       descricao: data.descricao,
-      isPublic: data.isPublic ?? true,
+      visibilidade: data.isPublic === false ? "privado" : "publico",
+      anoReferencia: data.anoReferencia,
+      carreira: data.carreiraId ? { connect: { id: data.carreiraId } } : undefined,
       disciplina: data.disciplinaId ? { connect: { id: data.disciplinaId } } : undefined,
       concurso: data.concursoId ? { connect: { id: data.concursoId } } : undefined,
+      dificuldade: data.dificuldadeId ? { connect: { id: data.dificuldadeId } } : undefined,
       usuario: { connect: { id: data.userId } },
     });
   }
@@ -55,9 +61,8 @@ export class NotebookService {
     // No Prisma, a relação N:N com campos extras (ordem) requer um createMany ou operações manuais
     // Aqui assumimos a tabela de ligação 'questoes' (QuestaoNoCaderno)
     const operations = questionIds.map((id, index) => ({
-      cadernoId: notebookId,
       questaoId: id,
-      ordem: index,
+      ordem: index + 1,
     }));
 
     // Usando uma transação para garantir integridade

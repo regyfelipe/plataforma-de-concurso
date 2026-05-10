@@ -1,18 +1,28 @@
 "use client"
 
-import * as React from "react"
-import { Layout, Library, AlignLeft, Image as ImageIcon, Briefcase, Landmark, BookOpen, BarChart3, Calendar } from "lucide-react"
+import { Layout, Library, AlignLeft, Calendar } from "lucide-react"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { FilterSelect } from "@/components/questoes/filter/filter-select"
-import { DISCIPLINAS_MOCK, BANCAS_MOCK, CONCURSOS_MOCK } from "@/data/mocks/admin"
-
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@workspace/ui/components/card"
 import { Separator } from "@workspace/ui/components/separator"
-import { Plus } from "lucide-react"
+import type { NotebookFormState } from "@/app/(admin)/admin/cadernos/criar/create-notebook-form"
 
-export function NotebookBasicInfo() {
+type FilterOption = { label: string; value: string }
+
+interface NotebookBasicInfoProps {
+    values: NotebookFormState
+    options: {
+        carreiras: FilterOption[]
+        concursos: FilterOption[]
+        disciplinas: FilterOption[]
+        dificuldades: FilterOption[]
+    }
+    onChange: <K extends keyof NotebookFormState>(field: K, value: NotebookFormState[K]) => void
+}
+
+export function NotebookBasicInfo({ values, options, onChange }: NotebookBasicInfoProps) {
     return (
         <Card>
             <CardHeader>
@@ -37,6 +47,8 @@ export function NotebookBasicInfo() {
                             Título do Caderno
                         </Label>
                         <Input
+                            value={values.nome}
+                            onChange={(event) => onChange("nome", event.target.value)}
                             placeholder="Ex: Caderno PF 2026 - Direito Constitucional"
                             className="h-12 text-sm"
                         />
@@ -49,6 +61,8 @@ export function NotebookBasicInfo() {
                             Descrição Estratégica
                         </Label>
                         <Textarea
+                            value={values.descricao}
+                            onChange={(event) => onChange("descricao", event.target.value)}
                             placeholder="Descreva o foco deste conjunto de questões e dicas para o estudo..."
                             className="h-12 min-h-[48px] resize-none text-sm"
                         />
@@ -63,12 +77,10 @@ export function NotebookBasicInfo() {
                         <FilterSelect 
                             label="Carreira"
                             placeholder="Selecione a Carreira"
-                            options={[
-                                { label: "Policial", value: "policial" },
-                                { label: "Tribunais", value: "tribunais" },
-                                { label: "Administrativa", value: "administrativa" },
-                            ]}
+                            options={options.carreiras}
                             isMulti={false}
+                            value={values.carreiraId}
+                            onValueChange={(value) => onChange("carreiraId", value)}
                         />
                     </div>
 
@@ -76,8 +88,10 @@ export function NotebookBasicInfo() {
                         <FilterSelect 
                             label="Concurso Base"
                             placeholder="Selecione o Concurso"
-                            options={CONCURSOS_MOCK.map(c => ({ label: c.name, value: c.id }))}
+                            options={options.concursos}
                             isMulti={false}
+                            value={values.concursoId}
+                            onValueChange={(value) => onChange("concursoId", value)}
                         />
                     </div>
 
@@ -85,8 +99,10 @@ export function NotebookBasicInfo() {
                         <FilterSelect 
                             label="Disciplina Principal"
                             placeholder="Selecione a Disciplina"
-                            options={DISCIPLINAS_MOCK.map(d => ({ label: d.name, value: d.id }))}
+                            options={options.disciplinas}
                             isMulti={false}
+                            value={values.disciplinaId}
+                            onValueChange={(value) => onChange("disciplinaId", value)}
                         />
                     </div>
 
@@ -94,12 +110,10 @@ export function NotebookBasicInfo() {
                         <FilterSelect 
                             label="Dificuldade"
                             placeholder="Nível"
-                            options={[
-                                { label: "Fácil", value: "facil" },
-                                { label: "Médio", value: "medio" },
-                                { label: "Difícil", value: "dificil" },
-                            ]}
+                            options={options.dificuldades}
                             isMulti={false}
+                            value={values.dificuldade}
+                            onValueChange={(value) => onChange("dificuldade", value)}
                         />
                     </div>
 
@@ -108,7 +122,12 @@ export function NotebookBasicInfo() {
                             <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
                             Ano de Referência
                         </Label>
-                        <Input placeholder="2024" className="h-10" />
+                        <Input
+                            value={values.ano}
+                            onChange={(event) => onChange("ano", event.target.value)}
+                            placeholder="2024"
+                            className="h-10"
+                        />
                     </div>
                 </div>
             </CardContent>

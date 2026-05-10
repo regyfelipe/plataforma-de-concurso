@@ -31,6 +31,7 @@ export default async function ConcursosPage() {
         ano: item.ano || undefined,
         status: item.status,
         active: item.ativo,
+        logoUrl: item.logoUrl || undefined,
         questionsCount: item._count.questoes,
         editHref: `/admin/concursos/editar/${item.id}`,
     }))

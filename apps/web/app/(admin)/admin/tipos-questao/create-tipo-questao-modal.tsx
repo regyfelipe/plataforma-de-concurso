@@ -87,8 +87,9 @@ export function CreateTipoQuestaoModal() {
                   Modelo de Resposta
                 </Label>
                 <Select value={modelo} onValueChange={(val) => {
-                  setModelo(val)
-                  if (val === "certo_errado") setQuantidade("2")
+                  const nextValue = val ?? "multipla_escolha"
+                  setModelo(nextValue)
+                  if (nextValue === "certo_errado") setQuantidade("2")
                 }}>
                   <SelectTrigger className="w-full">
                     <SelectValue />
@@ -107,7 +108,7 @@ export function CreateTipoQuestaoModal() {
                 </Label>
                 <Select 
                   value={quantidade} 
-                  onValueChange={setQuantidade}
+                  onValueChange={(value) => setQuantidade(value ?? "5")}
                   disabled={modelo === "certo_errado"}
                 >
                   <SelectTrigger className="w-full">

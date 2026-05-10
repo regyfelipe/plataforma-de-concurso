@@ -5,7 +5,7 @@ export async function GET() {
   try {
     const questions = await listQuestionsService();
     return NextResponse.json(questions);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -16,9 +16,9 @@ export async function POST(req: NextRequest) {
     const newQuestion = await createQuestionService(body);
     
     return NextResponse.json(newQuestion, { status: 201 });
-  } catch (error: any) {
-    if (error.name === "ZodError") {
-      return NextResponse.json({ error: "Validation Error", details: error.errors }, { status: 400 });
+  } catch (error) {
+    if (error instanceof Error && error.name === "ZodError") {
+      return NextResponse.json({ error: "Validation Error", details: error }, { status: 400 });
     }
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

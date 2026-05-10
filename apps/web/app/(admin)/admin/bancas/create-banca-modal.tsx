@@ -34,12 +34,14 @@ export function CreateBancaModal() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="gap-2 shadow-lg hover:scale-[1.02] transition-transform">
-          <Plus className="w-4 h-4" />
-          Nova Banca
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button className="gap-2 shadow-lg hover:scale-[1.02] transition-transform">
+            <Plus className="w-4 h-4" />
+            Nova Banca
+          </Button>
+        }
+      />
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Nova Banca Examinadora</DialogTitle>
@@ -80,8 +82,8 @@ export function CreateBancaModal() {
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-2">
-            <DialogClose asChild>
-              <Button variant="ghost" type="button">Cancelar</Button>
+            <DialogClose render={<Button variant="ghost" type="button" />}>
+              Cancelar
             </DialogClose>
             <Button type="submit" disabled={isPending}>
               {isPending ? "Salvando..." : "Salvar Banca"}

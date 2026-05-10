@@ -2,8 +2,6 @@
 
 import { FilterSelect } from "@/components/questoes/filter/filter-select"
 import { Card, CardContent } from "@workspace/ui/components/card"
-import { Input } from "@workspace/ui/components/input"
-import { Label } from "@workspace/ui/components/label"
 
 export interface QuestionTaxonomyOptions {
     disciplinas: { id: string; nome: string; code: string }[]
@@ -11,7 +9,7 @@ export interface QuestionTaxonomyOptions {
     topicos: { id: string; nome: string; assuntoId: string }[]
     subtopicos: { id: string; nome: string; topicoId: string }[]
     bancas: { id: string; nome: string; sigla: string }[]
-    concursos: { id: string; nome: string; ano: number | null }[]
+    concursos: { id: string; nome: string; ano: number | null; cargo?: string | null }[]
     carreiras: { id: string; nome: string }[]
     niveis: { id: string; nome: string }[]
     dificuldades: { id: string; nome: string; slug: string }[]
@@ -172,8 +170,8 @@ export function QuestionClassificationSection({ onTypeChange, onFieldChange, val
                         <FilterSelect 
                             label="Cargo" 
                             placeholder="Selecione ou digite..." 
-                            options={Array.from(new Set(taxonomy.concursos.map(c => (c as any).cargo).filter(Boolean)))
-                                .map(cargo => ({ label: cargo as string, value: cargo as string }))
+                            options={Array.from(new Set(taxonomy.concursos.map(c => c.cargo).filter(Boolean)))
+                                .map(cargo => ({ label: cargo ?? "", value: cargo ?? "" }))
                             }
                             isMulti={false}
                             value={values.cargo}

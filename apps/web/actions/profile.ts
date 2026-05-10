@@ -17,6 +17,7 @@ const profileSchema = z.object({
   facebook: z.string().trim().max(100).optional(),
   carreiraId: z.string().uuid().optional().or(z.literal("")),
   visibilidade: z.enum(["privado", "basico_publico", "completo_publico"]),
+  avatarUrl: z.string().url().optional().or(z.literal("")),
 })
 
 const addressSchema = z.object({
@@ -87,6 +88,7 @@ export async function updateStudentProfile(values: z.infer<typeof profileSchema>
       where: { id: session.user.id },
       data: {
         nome: data.nome,
+        avatarUrl: emptyToNull(data.avatarUrl),
         telefone: emptyToNull(data.telefone),
         cpf: currentUser.cpf ? undefined : emptyToNull(data.cpf),
         dataNascimento: currentUser.dataNascimento ? undefined : parseOptionalDate(data.dataNascimento),
@@ -97,7 +99,7 @@ export async function updateStudentProfile(values: z.infer<typeof profileSchema>
       create: {
         usuarioId: session.user.id,
         nomeExibicao: emptyToNull(data.nomeExibicao),
-        avatarUrl: null,
+        avatarUrl: emptyToNull(data.avatarUrl),
         telefone: emptyToNull(data.telefone),
         bio: emptyToNull(data.bio),
         visibilidade: data.visibilidade,
@@ -108,6 +110,7 @@ export async function updateStudentProfile(values: z.infer<typeof profileSchema>
       },
       update: {
         nomeExibicao: emptyToNull(data.nomeExibicao),
+        avatarUrl: emptyToNull(data.avatarUrl),
         telefone: emptyToNull(data.telefone),
         bio: emptyToNull(data.bio),
         visibilidade: data.visibilidade,

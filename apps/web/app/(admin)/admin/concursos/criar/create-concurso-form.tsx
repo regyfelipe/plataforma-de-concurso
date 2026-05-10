@@ -82,7 +82,7 @@ export function CreateConcursoForm({
                                     <Landmark className="w-3.5 h-3.5 text-muted-foreground" />
                                     Banca Examinadora
                                 </Label>
-                                <Select value={bancaId} onValueChange={setBancaId}>
+                                <Select value={bancaId} onValueChange={(value) => setBancaId(value ?? "")}>
                                     <SelectTrigger className="w-full h-10">
                                         <SelectValue placeholder="Selecione a Banca" />
                                     </SelectTrigger>
@@ -114,7 +114,7 @@ export function CreateConcursoForm({
                                     <Briefcase className="w-3.5 h-3.5 text-muted-foreground" />
                                     Carreira
                                 </Label>
-                                <Select value={carreiraId} onValueChange={setCarreiraId}>
+                                <Select value={carreiraId} onValueChange={(value) => setCarreiraId(value ?? "")}>
                                     <SelectTrigger className="w-full h-10">
                                         <SelectValue placeholder="Selecione a Carreira" />
                                     </SelectTrigger>
@@ -131,7 +131,7 @@ export function CreateConcursoForm({
                                     <School className="w-3.5 h-3.5 text-muted-foreground" />
                                     Escolaridade
                                 </Label>
-                                <Select value={nivelId} onValueChange={setNivelId}>
+                                <Select value={nivelId} onValueChange={(value) => setNivelId(value ?? "")}>
                                     <SelectTrigger className="w-full h-10">
                                         <SelectValue placeholder="Selecione o Nível" />
                                     </SelectTrigger>

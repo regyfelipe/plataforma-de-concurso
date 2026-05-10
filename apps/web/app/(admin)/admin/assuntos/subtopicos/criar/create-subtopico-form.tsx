@@ -61,7 +61,7 @@ export function CreateSubtopicoForm({ topicos }: { topicos: TopicoOption[] }) {
                                     <Bookmark className="w-3.5 h-3.5 text-muted-foreground" />
                                     Tópico Principal (Assunto Pai)
                                 </Label>
-                                <Select value={topicoId} onValueChange={setTopicoId}>
+                                <Select value={topicoId} onValueChange={(value) => setTopicoId(value ?? "")}>
                                     <SelectTrigger className="w-full h-10">
                                         <SelectValue placeholder="Selecione o Tópico Pai" />
                                     </SelectTrigger>

@@ -2,12 +2,10 @@
 
 import * as React from "react"
 import { FilterSelect } from "@/components/questoes/filter/filter-select"
-import { Search, Plus, X, Eye, GripVertical, CheckCircle2, ListFilter, MousePointer2, Landmark, BookOpen, Briefcase } from "lucide-react"
+import { Search, Plus, X, Eye, CheckCircle2, ListFilter, MousePointer2, Landmark, BookOpen, Briefcase, Hash } from "lucide-react"
 import { Input } from "@workspace/ui/components/input"
-import { Textarea } from "@workspace/ui/components/textarea"
 import { Button } from "@workspace/ui/components/button"
 import { Badge } from "@workspace/ui/components/badge"
-import { Label } from "@workspace/ui/components/label"
 import { Dialog, DialogContent, DialogTrigger } from "@workspace/ui/components/dialog"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { QuestionStatementSection } from "../questions/create/question-statement-section"
@@ -15,22 +13,171 @@ import { QuestionAlternativesSection } from "../questions/create/question-altern
 import { QuestionResolutionSection } from "../questions/create/question-resolution-section"
 import { QuestionAlternativeExplanationsSection } from "../questions/create/question-alternative-explanations-section"
 import { QuestionMaterialsSection } from "../questions/create/question-materials-section"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@workspace/ui/components/card"
+import { Card, CardContent } from "@workspace/ui/components/card"
 import { Separator } from "@workspace/ui/components/separator"
+import { createAdminQuestion } from "@/actions/admin-questions"
+import type { NotebookQuestionContext, NotebookQuestionOption, NotebookQuestionTypeOption } from "@/app/(admin)/admin/cadernos/criar/create-notebook-form"
 
-export function NotebookQuestionPicker() {
-    const [selectedCount, setSelectedCount] = React.useState(0)
+interface DraftAlternative {
+    id: string
+    letter: string
+    text: string
+    isCorrect: boolean
+    explanation?: string
+}
+
+interface NotebookQuestionPickerProps {
+    questions: NotebookQuestionOption[]
+    context: NotebookQuestionContext
+    questionTypes: NotebookQuestionTypeOption[]
+    selectedQuestionIds: string[]
+    onSelectedQuestionIdsChange: React.Dispatch<React.SetStateAction<string[]>>
+    onQuestionCreated: (question: NotebookQuestionOption) => void | Promise<void>
+}
+
+function buildAlternatives(type?: NotebookQuestionTypeOption): DraftAlternative[] {
+    if (type?.modelo === "certo_errado") {
+        return [
+            { id: "c", letter: "C", text: "Certo", isCorrect: false, explanation: "" },
+            { id: "e", letter: "E", text: "Errado", isCorrect: false, explanation: "" },
+        ]
+    }
+
+    const quantity = Math.min(Math.max(type?.quantidadeAlternativas ?? 5, 2), 5)
+
+    return Array.from({ length: quantity }, (_, index) => ({
+        id: String(index + 1),
+        letter: String.fromCharCode(65 + index),
+        text: "",
+        isCorrect: false,
+        explanation: "",
+    }))
+}
+
+export function NotebookQuestionPicker({
+    questions,
+    context,
+    questionTypes,
+    selectedQuestionIds,
+    onSelectedQuestionIdsChange,
+    onQuestionCreated,
+}: NotebookQuestionPickerProps) {
     const [view, setView] = React.useState<'bank' | 'notebook'>('bank')
+    const [isCreateOpen, setIsCreateOpen] = React.useState(false)
+    const defaultQuestionType = questionTypes[0]
+    const [questionTypeId, setQuestionTypeId] = React.useState(defaultQuestionType?.id ?? "")
+    const [modalError, setModalError] = React.useState<string | null>(null)
+    const [isPending, startTransition] = React.useTransition()
+    const selectedQuestions = questions.filter((question) => selectedQuestionIds.includes(question.id))
+    const selectedCount = selectedQuestionIds.length
+
+    const toggleQuestion = (questionId: string) => {
+        onSelectedQuestionIdsChange((prev) =>
+            prev.includes(questionId)
+                ? prev.filter((id) => id !== questionId)
+                : [...prev, questionId]
+        )
+    }
+
+    const removeQuestion = (questionId: string) => {
+        onSelectedQuestionIdsChange((prev) => prev.filter((id) => id !== questionId))
+    }
 
     // Estados do Formulário de Criação Completo
     const [statement, setStatement] = React.useState({ supportText: "", commandText: "" })
-    const [alternativas, setAlternativas] = React.useState([
-        { id: "1", letter: "A", text: "", isCorrect: false, explanation: "" },
-        { id: "2", letter: "B", text: "", isCorrect: false, explanation: "" },
-        { id: "3", letter: "C", text: "", isCorrect: false, explanation: "" },
-    ])
+    const [alternativas, setAlternativas] = React.useState<DraftAlternative[]>(() => buildAlternatives(defaultQuestionType))
     const [resolution, setResolution] = React.useState("")
     const [materials, setMaterials] = React.useState({ videoUrl: "", objetivo: "", referencia: "", dica: "" })
+    const selectedYear = Number.parseInt(context.ano, 10)
+    const selectedQuestionType = questionTypes.find((type) => type.id === questionTypeId)
+    const selectedModel = selectedQuestionType?.modelo === "certo_errado" ? "certo_errado" : "multipla_escolha"
+
+    const resetQuestionDraft = () => {
+        setStatement({ supportText: "", commandText: "" })
+        setResolution("")
+        setMaterials({ videoUrl: "", objetivo: "", referencia: "", dica: "" })
+        setQuestionTypeId(defaultQuestionType?.id ?? "")
+        setAlternativas(buildAlternatives(defaultQuestionType))
+    }
+
+    const handleTypeChange = (value: string) => {
+        const type = questionTypes.find((item) => item.id === value)
+
+        setQuestionTypeId(value)
+        setModalError(null)
+        setAlternativas(buildAlternatives(type))
+    }
+
+    const handleCreateQuestion = () => {
+        setModalError(null)
+
+        startTransition(async () => {
+            try {
+                const questao = await createAdminQuestion({
+                    disciplinaId: context.disciplinaId || null,
+                    assuntoId: null,
+                    topicoId: null,
+                    subtopicoId: null,
+                    bancaId: null,
+                    concursoId: context.concursoId || null,
+                    carreiraId: context.carreiraId || null,
+                    nivelId: null,
+                    dificuldadeId: context.dificuldadeId || null,
+                    tipoId: questionTypeId || null,
+                    instituicao: context.concursoLabel,
+                    cargo: "",
+                    ano: Number.isFinite(selectedYear) ? selectedYear : null,
+                    isInedita: true,
+                    enunciado: statement.commandText,
+                    textoApoio: statement.supportText,
+                    resolucao: resolution,
+                    videoUrl: materials.videoUrl,
+                    objetivo: materials.objetivo,
+                    referencia: materials.referencia,
+                    dica: materials.dica,
+                    visibilidade: "publica",
+                    status: "published",
+                    alternativas: alternativas.map(({ letter, text, isCorrect, explanation }) => ({
+                        letter,
+                        text,
+                        isCorrect,
+                        explanation,
+                        reference: "",
+                        tip: "",
+                    })),
+                })
+
+                await onQuestionCreated({
+                    id: questao.id,
+                    code: questao.code,
+                    text: statement.commandText,
+                    supportText: statement.supportText || null,
+                    resolution: resolution || null,
+                    board: "Inédita",
+                    institution: context.concursoLabel || null,
+                    career: context.carreiraLabel || null,
+                    subject: null,
+                    topic: null,
+                    year: Number.isFinite(selectedYear) ? selectedYear : null,
+                    educationLevel: "Nível não informado",
+                    discipline: context.disciplinaLabel || "Sem disciplina",
+                    difficulty: "medio",
+                    isUnique: true,
+                    alternatives: alternativas.map((alternativa) => ({
+                        id: alternativa.id,
+                        letter: alternativa.letter,
+                        text: alternativa.text,
+                        isCorrect: alternativa.isCorrect,
+                        explanation: alternativa.explanation ?? null,
+                    })),
+                })
+                resetQuestionDraft()
+                setIsCreateOpen(false)
+            } catch (error) {
+                setModalError(error instanceof Error ? error.message : "Não foi possível criar a questão inédita.")
+            }
+        })
+    }
 
     return (
         <Card>
@@ -59,13 +206,15 @@ export function NotebookQuestionPicker() {
                             </Button>
                         </div>
 
-                        <Dialog>
-                            <DialogTrigger asChild>
-                                <Button className="h-9 rounded-xl gap-2 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 text-xs font-bold px-4">
-                                    <Plus className="w-4 h-4" />
-                                    Criar Inédita
-                                </Button>
-                            </DialogTrigger>
+                        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                            <DialogTrigger
+                                render={
+                                    <Button className="h-9 rounded-xl gap-2 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 text-xs font-bold px-4">
+                                        <Plus className="w-4 h-4" />
+                                        Criar Inédita
+                                    </Button>
+                                }
+                            />
                             <DialogContent className="!max-w-none !w-[55vw] max-h-[85vh] p-0 overflow-hidden flex flex-col">
                                 <div className="p-6 border-b bg-muted/30">
                                     <div className="flex items-center justify-between">
@@ -88,17 +237,23 @@ export function NotebookQuestionPicker() {
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                             <div className="flex items-center gap-2 p-3 rounded-xl border bg-muted/20">
                                                 <BookOpen className="w-3.5 h-3.5 text-primary" />
-                                                <span className="text-[10px] font-bold uppercase truncate">D. Administrativo</span>
+                                                <span className="text-[10px] font-bold uppercase truncate">{context.disciplinaLabel || "Sem disciplina"}</span>
                                             </div>
                                             <div className="flex items-center gap-2 p-3 rounded-xl border bg-muted/20">
                                                 <Briefcase className="w-3.5 h-3.5 text-primary" />
-                                                <span className="text-[10px] font-bold uppercase truncate">Policial</span>
+                                                <span className="text-[10px] font-bold uppercase truncate">{context.carreiraLabel || "Sem carreira"}</span>
                                             </div>
                                             <div className="flex items-center gap-2 p-3 rounded-xl border bg-muted/20">
                                                 <Landmark className="w-3.5 h-3.5 text-primary" />
-                                                <span className="text-[10px] font-bold uppercase truncate">PF 2024</span>
+                                                <span className="text-[10px] font-bold uppercase truncate">{context.concursoLabel || "Sem concurso"}</span>
                                             </div>
                                         </div>
+
+                                        {modalError && (
+                                            <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                                                {modalError}
+                                            </div>
+                                        )}
 
                                         <Separator />
 
@@ -107,11 +262,13 @@ export function NotebookQuestionPicker() {
                                                 label="Modelo de Resposta"
                                                 placeholder="Selecione o formato..."
                                                 options={[
-                                                    { label: "Múltipla Escolha (A até E)", value: "multipla_escolha" },
-                                                    { label: "Certo / Errado (Cebraspe)", value: "certo_errado" },
+                                                    ...questionTypes.map((type) => ({
+                                                        label: type.nome,
+                                                        value: type.id,
+                                                    })),
                                                 ]}
-                                                value="multipla_escolha"
-                                                onValueChange={() => {}}
+                                                value={questionTypeId}
+                                                onValueChange={handleTypeChange}
                                             />
                                         </div>
                                         <Separator />
@@ -129,7 +286,7 @@ export function NotebookQuestionPicker() {
                                         {/* 3. Alternativas */}
                                         <div className="space-y-4">
                                             <QuestionAlternativesSection 
-                                                alternativas={alternativas as any} 
+                                                alternativas={alternativas} 
                                                 onToggleCorrect={(id) => setAlternativas(prev => prev.map(alt => ({ ...alt, isCorrect: alt.id === id })))}
                                                 onChangeText={(id, text) => setAlternativas(prev => prev.map(alt => alt.id === id ? { ...alt, text } : alt))}
                                                 onRemove={(id) => setAlternativas(prev => prev.filter(alt => alt.id !== id))}
@@ -140,9 +297,11 @@ export function NotebookQuestionPicker() {
                                                 size="sm" 
                                                 className="w-full border-dashed"
                                                 onClick={() => {
+                                                    if (alternativas.length >= 5) return
                                                     const nextLetter = String.fromCharCode(65 + alternativas.length)
                                                     setAlternativas(prev => [...prev, { id: Date.now().toString(), letter: nextLetter, text: "", isCorrect: false, explanation: "" }])
                                                 }}
+                                                disabled={selectedModel === "certo_errado" || alternativas.length >= 5}
                                             >
                                                 <Plus className="w-4 h-4 mr-2" /> Adicionar Alternativa
                                             </Button>
@@ -160,7 +319,7 @@ export function NotebookQuestionPicker() {
 
                                         {/* 5. Justificativa das Incorretas */}
                                         <QuestionAlternativeExplanationsSection 
-                                            alternativas={alternativas as any}
+                                            alternativas={alternativas}
                                             onChangeData={(id, value) => setAlternativas(prev => prev.map(alt => alt.id === id ? { ...alt, explanation: value } : alt))}
                                         />
 
@@ -175,8 +334,10 @@ export function NotebookQuestionPicker() {
                                 </div>
 
                                 <div className="p-4 border-t bg-muted/5 flex items-center justify-end gap-3 px-8">
-                                    <Button variant="ghost" size="sm">Cancelar</Button>
-                                    <Button size="sm" className="px-8 rounded-lg font-bold shadow-lg shadow-primary/20">Salvar e Adicionar</Button>
+                                    <Button variant="ghost" size="sm" onClick={() => setIsCreateOpen(false)} disabled={isPending}>Cancelar</Button>
+                                    <Button size="sm" className="px-8 rounded-lg font-bold shadow-lg shadow-primary/20" onClick={handleCreateQuestion} disabled={isPending}>
+                                        {isPending ? "Salvando..." : "Salvar e Adicionar"}
+                                    </Button>
                                 </div>
                             </DialogContent>
                         </Dialog>
@@ -199,21 +360,26 @@ export function NotebookQuestionPicker() {
                         {view === 'bank' && (
                             <>
                                 <div className="flex items-center justify-between px-1">
-                                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Disponíveis no Banco (1.240)</span>
+                                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Disponíveis no Banco ({questions.length})</span>
                                 </div>
 
                                 <ScrollArea className="h-[600px] pr-4 border rounded-2xl bg-muted/5">
                                     <div className="p-3 space-y-3">
-                                        {[1, 2, 3, 4, 5].map((i) => (
-                                            <div key={i} className="group p-4 bg-background border rounded-xl hover:border-primary/50 transition-colors shadow-sm">
+                                        {questions.map((question) => {
+                                            const isSelected = selectedQuestionIds.includes(question.id)
+
+                                            return (
+                                            <div key={question.id} className="group p-4 bg-background border rounded-xl hover:border-primary/50 transition-colors shadow-sm">
                                                 <div className="flex items-start justify-between gap-4">
                                                     <div className="space-y-2 flex-1">
                                                         <div className="flex items-center gap-2">
-                                                            <Badge variant="outline" className="font-mono text-[10px] h-5 px-2 bg-primary/5 text-primary border-primary/20">Q128374</Badge>
-                                                            <span className="text-[10px] font-semibold text-muted-foreground uppercase">CEBRASPE • 2024 • Superior</span>
+                                                            <Badge variant="outline" className="font-mono text-[10px] h-5 px-2 bg-primary/5 text-primary border-primary/20">{question.code}</Badge>
+                                                            <span className="text-[10px] font-semibold text-muted-foreground uppercase">
+                                                                {question.board} • {question.year ?? "S/A"} • {question.educationLevel}
+                                                            </span>
                                                         </div>
                                                         <p className="text-sm font-medium text-foreground/90 leading-relaxed line-clamp-2">
-                                                            No que se refere aos atos administrativos, assinale a opção correta considerando a jurisprudência dos tribunais superiores...
+                                                            {question.text}
                                                         </p>
                                                     </div>
 
@@ -224,15 +390,23 @@ export function NotebookQuestionPicker() {
 
                                                         <Button
                                                             size="icon"
+                                                            variant={isSelected ? "secondary" : "default"}
                                                             className="h-8 w-8"
-                                                            onClick={() => setSelectedCount(prev => prev + 1)}
+                                                            onClick={() => toggleQuestion(question.id)}
                                                         >
-                                                            <Plus className="w-4 h-4" />
+                                                            {isSelected ? <CheckCircle2 className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                                                         </Button>
                                                     </div>
                                                 </div>
                                             </div>
-                                        ))}
+                                        )})}
+
+                                        {questions.length === 0 && (
+                                            <div className="h-[240px] flex flex-col items-center justify-center text-center p-6 opacity-60">
+                                                <ListFilter className="w-8 h-8 mb-3 text-muted-foreground" />
+                                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Nenhuma questão publicada disponível</p>
+                                            </div>
+                                        )}
                                     </div>
                                 </ScrollArea>
                             </>
@@ -250,40 +424,95 @@ export function NotebookQuestionPicker() {
 
                                 <ScrollArea className="h-[600px] pr-4">
                                     <div className="space-y-8 pb-12">
-                                        {[1, 2].map((i) => (
-                                            <Card key={i} className="border-none bg-background shadow-lg shadow-black/5 overflow-hidden rounded-2xl">
-                                                <div className="p-6 space-y-6">
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
-                                                                {i}
+                                        {selectedQuestions.map((question, index) => (
+                                            <Card key={question.id} className="overflow-hidden rounded-2xl border bg-background shadow-lg shadow-black/5">
+                                                <div className="border-b bg-muted/20 p-5 space-y-4">
+                                                    <div className="flex items-start justify-between gap-4">
+                                                        <div className="flex items-start gap-3 min-w-0">
+                                                            <div className="w-8 h-8 shrink-0 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                                                                {index + 1}
                                                             </div>
-                                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Questão Q128374</span>
+                                                            <div className="min-w-0 space-y-2">
+                                                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                                                   
+                                                                    <span className="text-[11px] font-semibold text-foreground/70">{question.discipline}</span>
+                                                                    {question.subject && <span className="text-[11px] text-muted-foreground">/ {question.subject}</span>}
+                                                                    {question.topic && <span className="text-[11px] text-muted-foreground">/ {question.topic}</span>}
+                                                                </div>
+
+                                                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                                                   
+                                                                    {question.institution && <span>{question.institution}</span>}
+                                                                    
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                                                            onClick={() => removeQuestion(question.id)}
+                                                        >
                                                             <X className="w-4 h-4" />
                                                         </Button>
                                                     </div>
+                                                </div>
 
-                                                    <div className="space-y-4">
-                                                        <p className="text-base font-medium leading-relaxed text-foreground/90">
-                                                            De acordo com a Lei nº 8.112/1990, o servidor público que for demitido em razão de prática de improbidade administrativa ficará impedido de retornar ao serviço público federal pelo prazo de:
-                                                        </p>
-                                                        
-                                                        <div className="space-y-3">
-                                                            {['5 anos', '10 anos', '15 anos', 'Permanentemente', 'Indeterminadamente'].map((opt, idx) => (
-                                                                <div key={idx} className="flex items-center gap-3 p-4 rounded-xl border bg-muted/5 hover:bg-muted/30 transition-all cursor-pointer group">
-                                                                    <div className="w-6 h-6 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center font-bold text-[10px] group-hover:border-primary transition-colors">
-                                                                        {String.fromCharCode(65 + idx)}
-                                                                    </div>
-                                                                    <span className="text-sm">{opt}</span>
-                                                                </div>
-                                                            ))}
+                                                <div className="p-6 space-y-6">
+                                                    {question.supportText && (
+                                                        <div className="rounded-xl border bg-muted/10 p-4 space-y-2">
+                                                            <p className="text-[10px] font-bold uppercase tracking-widest text-primary/70">Texto de Apoio</p>
+                                                            <div
+                                                                className="prose dark:prose-invert max-w-none text-sm leading-relaxed text-foreground/80"
+                                                                dangerouslySetInnerHTML={{ __html: question.supportText }}
+                                                            />
                                                         </div>
+                                                    )}
+
+                                                    <div
+                                                        className="prose dark:prose-invert max-w-none text-base font-semibold leading-relaxed text-foreground/90"
+                                                        dangerouslySetInnerHTML={{ __html: question.text }}
+                                                    />
+
+                                                    <div className="space-y-3">
+                                                        {question.alternatives.length > 0 ? (
+                                                            question.alternatives.map((alternative) => (
+                                                                <div key={alternative.id} className="flex items-start gap-3 rounded-xl border bg-muted/5 p-4">
+                                                                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border bg-background text-xs font-bold text-muted-foreground">
+                                                                        {alternative.letter}
+                                                                    </div>
+                                                                    <div
+                                                                        className="prose dark:prose-invert max-w-none text-sm leading-relaxed text-foreground/80"
+                                                                        dangerouslySetInnerHTML={{ __html: alternative.text }}
+                                                                    />
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            <div className="rounded-xl border border-dashed bg-muted/5 p-4 text-sm text-muted-foreground">
+                                                                Alternativas não cadastradas para esta questão.
+                                                            </div>
+                                                        )}
                                                     </div>
+
+                                                    {question.resolution && (
+                                                        <div className="rounded-xl border bg-emerald-500/5 p-4 space-y-2">
+                                                            <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">Resolução</p>
+                                                            <div
+                                                                className="prose dark:prose-invert max-w-none text-sm leading-relaxed text-foreground/80"
+                                                                dangerouslySetInnerHTML={{ __html: question.resolution }}
+                                                            />
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </Card>
                                         ))}
+
+                                        {selectedQuestions.length === 0 && (
+                                            <div className="h-[240px] flex flex-col items-center justify-center text-center p-6 opacity-50 border rounded-2xl bg-muted/5">
+                                                <MousePointer2 className="w-8 h-8 mb-3 text-muted-foreground" />
+                                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Selecione questões no banco</p>
+                                            </div>
+                                        )}
                                     </div>
                                 </ScrollArea>
                             </div>
@@ -304,17 +533,17 @@ export function NotebookQuestionPicker() {
                             <ScrollArea className="h-[540px] rounded-2xl border bg-muted/5 p-2">
                                 <div className="space-y-2">
                                     {selectedCount > 0 ? (
-                                        Array.from({ length: selectedCount }).map((_, i) => (
-                                            <div key={i} className="flex items-center gap-3 p-3 bg-background border rounded-xl shadow-sm group">
+                                        selectedQuestions.map((question) => (
+                                            <div key={question.id} className="flex items-center gap-3 p-3 bg-background border rounded-xl shadow-sm group">
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-xs font-bold text-foreground">#12837{i}</p>
-                                                    <p className="text-[10px] text-muted-foreground truncate uppercase font-medium">D. Administrativo</p>
+                                                    <p className="text-xs font-bold text-foreground">{question.code}</p>
+                                                    <p className="text-[10px] text-muted-foreground truncate uppercase font-medium">{question.discipline}</p>
                                                 </div>
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                                    onClick={() => setSelectedCount(prev => prev - 1)}
+                                                    onClick={() => removeQuestion(question.id)}
                                                 >
                                                     <X className="w-3.5 h-3.5" />
                                                 </Button>

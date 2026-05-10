@@ -18,6 +18,7 @@ export default async function CarreirasPage() {
         title: item.nome,
         subtitle: item.descricao || undefined,
         active: item.ativo,
+        iconUrl: item.iconUrl || undefined,
         questionsCount: item._count.questoes,
         editHref: `/admin/carreiras/editar/${item.id}`,
     }))

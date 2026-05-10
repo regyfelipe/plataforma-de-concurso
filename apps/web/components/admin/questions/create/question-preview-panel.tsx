@@ -7,9 +7,10 @@ import { Card, CardContent } from "@workspace/ui/components/card"
 interface QuestionPreviewPanelProps {
     onPublish: () => void
     isSubmitting: boolean
+    isEditing?: boolean
 }
 
-export function QuestionPreviewPanel({ onPublish, isSubmitting }: QuestionPreviewPanelProps) {
+export function QuestionPreviewPanel({ onPublish, isSubmitting, isEditing = false }: QuestionPreviewPanelProps) {
     return (
         <section className="space-y-4">
             <div className="flex items-center gap-2 px-1">
@@ -34,7 +35,7 @@ export function QuestionPreviewPanel({ onPublish, isSubmitting }: QuestionPrevie
                         onClick={onPublish} 
                         disabled={isSubmitting}
                     >
-                        {isSubmitting ? "Publicando..." : "Publicar Questão Agora"}
+                        {isSubmitting ? "Salvando..." : isEditing ? "Salvar Edição Agora" : "Publicar Questão Agora"}
                     </Button>
                 </CardContent>
             </Card>

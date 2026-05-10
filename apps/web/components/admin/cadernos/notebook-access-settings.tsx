@@ -1,15 +1,18 @@
 "use client"
 
-import * as React from "react"
-import { Lock, Eye, Star, FileEdit, Globe, MessageSquare, Trophy, Home, CheckCircle2 } from "lucide-react"
+import { Lock, MessageSquare, Trophy, Home, CheckCircle2 } from "lucide-react"
 import { Switch } from "@workspace/ui/components/switch"
 import { Label } from "@workspace/ui/components/label"
-import { RadioGroup, RadioGroupItem } from "@workspace/ui/components/radio-group"
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@workspace/ui/components/card"
-import { Separator } from "@workspace/ui/components/separator"
+import type { NotebookFormState } from "@/app/(admin)/admin/cadernos/criar/create-notebook-form"
 
-export function NotebookAccessSettings() {
+interface NotebookAccessSettingsProps {
+    values: NotebookFormState
+    onChange: <K extends keyof NotebookFormState>(field: K, value: NotebookFormState[K]) => void
+}
+
+export function NotebookAccessSettings({ values, onChange }: NotebookAccessSettingsProps) {
     return (
         <Card>
             <CardHeader>
@@ -38,7 +41,7 @@ export function NotebookAccessSettings() {
                                 <p className="text-[11px] text-muted-foreground">Aparece na biblioteca pública.</p>
                             </div>
                         </div>
-                        <Switch defaultChecked />
+                        <Switch checked={values.disponivel} onCheckedChange={(checked) => onChange("disponivel", checked)} />
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -51,7 +54,7 @@ export function NotebookAccessSettings() {
                                 <p className="text-[11px] text-muted-foreground">Destaque na página inicial.</p>
                             </div>
                         </div>
-                        <Switch />
+                        <Switch checked={values.destaqueHome} onCheckedChange={(checked) => onChange("destaqueHome", checked)} />
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -64,7 +67,7 @@ export function NotebookAccessSettings() {
                                 <p className="text-[11px] text-muted-foreground">Fórum de discussão ativo.</p>
                             </div>
                         </div>
-                        <Switch defaultChecked />
+                        <Switch checked={values.permitirComentarios} onCheckedChange={(checked) => onChange("permitirComentarios", checked)} />
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -77,7 +80,7 @@ export function NotebookAccessSettings() {
                                 <p className="text-[11px] text-muted-foreground">Gamificação entre alunos.</p>
                             </div>
                         </div>
-                        <Switch defaultChecked />
+                        <Switch checked={values.permitirRanking} onCheckedChange={(checked) => onChange("permitirRanking", checked)} />
                     </div>
                 </div>
             </CardContent>

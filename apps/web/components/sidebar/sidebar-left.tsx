@@ -25,6 +25,7 @@ import {
 
 import { useLayout } from "@/contexts/layout-context"
 import { NavUser } from "@/components/nav/nav-user"
+import { useSession } from "@/lib/auth-client"
 import {
   Collapsible,
   CollapsibleContent,
@@ -56,13 +57,7 @@ import {
   DropdownMenuSeparator,
 } from "@workspace/ui/components/dropdown-menu"
 
-const data = {
-  user: {
-    name: "Felipe",
-    email: "lliper@concurso.com",
-    avatar: "/avatars/shadcn.jpg",
-  }
-}
+// Removido dado fixo "data" daqui
 
 // ─── Main navigation (Principais) ───────────────────────────────────────────
 
@@ -86,13 +81,8 @@ const navPrincipais = [
   },
   {
     title: "Caderno do Aluno",
-    url: "#",
+    url: "/caderno",
     icon: IconNotebook,
-    items: [
-      { title: "Meus Cadernos", url: "/caderno/meus" },
-      { title: "Anotações", url: "/caderno/anotacoes" },
-      { title: "Revisões", url: "/caderno/revisoes" },
-    ],
   },
   {
     title: "Rankings",
@@ -248,7 +238,14 @@ type AppSidebarProps = ComponentProps<typeof Sidebar> & {
 }
 
 export function AppSidebar({ showAdmin = false, ...props }: AppSidebarProps) {
+  const { data: session } = useSession()
   const { variant, collapsible, side } = useLayout()
+
+  const user = {
+    name: session?.user?.name || "Usuário",
+    email: session?.user?.email || "",
+    avatar: session?.user?.image || "/avatars/default.jpg",
+  }
 
   return (
     <Sidebar
@@ -296,7 +293,7 @@ export function AppSidebar({ showAdmin = false, ...props }: AppSidebarProps) {
         )}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={user} />
       </SidebarFooter>
     </Sidebar>
   )

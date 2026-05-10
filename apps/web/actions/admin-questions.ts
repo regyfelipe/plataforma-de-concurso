@@ -152,6 +152,66 @@ export async function createAdminQuestion(payload: CreateQuestionPayload) {
           }
         : undefined,
     },
+  })
+
+  revalidatePath("/admin/questoes")
+  revalidatePath("/admin/questoes/criar")
+
+  return questao
+}
+
+export async function updateAdminQuestion(id: string, payload: CreateQuestionPayload) {
+  const autorId = await requireAdmin()
+  const data = createQuestionSchema.parse(payload)
+
+  const questao = await prisma.questao.update({
+    where: { id },
+    data: {
+      disciplinaId: data.disciplinaId ?? null,
+      assuntoId: data.assuntoId ?? null,
+      topicoId: data.topicoId ?? null,
+      subtopicoId: data.subtopicoId ?? null,
+      bancaId: data.bancaId ?? null,
+      concursoId: data.concursoId ?? null,
+      carreiraId: data.carreiraId ?? null,
+      nivelId: data.nivelId ?? null,
+      dificuldadeId: data.dificuldadeId ?? null,
+      tipoId: data.tipoId ?? null,
+      instituicao: nullable(data.instituicao),
+      cargo: nullable(data.cargo),
+      ano: data.ano ?? null,
+      isInedita: data.isInedita,
+      enunciado: data.enunciado,
+      textoApoio: nullable(data.textoApoio),
+      resolucao: nullable(data.resolucao),
+      hasVideo: Boolean(data.videoUrl),
+      visibilidade: data.visibilidade,
+      status: data.status,
+      // Sincronizar alternativas (Remover e Recriar é mais simples para este caso)
+      alternativas: {
+        deleteMany: {},
+        create: data.alternativas.map((alt) => ({
+          letra: alt.letter,
+          texto: alt.text,
+          isCorreta: alt.isCorrect,
+          explicacao: nullable(alt.explanation),
+          referencia: nullable(alt.reference),
+          dica: nullable(alt.tip ?? data.dica),
+        })),
+      },
+      objetivos: {
+        deleteMany: {},
+        create: data.objetivo ? [{ descricao: data.objetivo }] : [],
+      },
+      referencias: {
+        deleteMany: {},
+        create: data.referencia ? [{ texto: data.referencia }] : [],
+      },
+      videos: {
+        deleteMany: {},
+        create: data.videoUrl ? [{ titulo: "Videoaula", url: data.videoUrl }] : [],
+      },
+    },
     select: {
       id: true,
       code: true,
@@ -160,6 +220,7 @@ export async function createAdminQuestion(payload: CreateQuestionPayload) {
   })
 
   revalidatePath("/admin/questoes")
+  revalidatePath(`/admin/questoes/editar/${id}`)
   revalidatePath("/admin/questoes/criar")
 
   return questao

@@ -41,6 +41,7 @@ type ConcursoItem = {
     ano?: number
     status: "aberto" | "previsto" | "encerrado"
     active: boolean
+    logoUrl?: string
     questionsCount: number
     editHref: string
 }
@@ -128,8 +129,12 @@ export function ConcursosList({
                                     <TableRow key={item.id} className="group transition-colors hover:bg-muted/30">
                                         <TableCell className="py-4">
                                             <div className="flex items-start gap-3">
-                                                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 mt-0.5">
-                                                    <GraduationCap className="w-5 h-5" />
+                                                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 mt-0.5 overflow-hidden border">
+                                                    {item.logoUrl ? (
+                                                        <img src={item.logoUrl} alt={item.nome} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <GraduationCap className="w-5 h-5" />
+                                                    )}
                                                 </div>
                                                 <div className="space-y-1.5">
                                                     <p className="text-sm font-bold text-foreground leading-tight">

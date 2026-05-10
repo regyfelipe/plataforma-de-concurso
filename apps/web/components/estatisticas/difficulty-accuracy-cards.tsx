@@ -1,6 +1,6 @@
 "use client"
 
-import { Zap, BarChart2, ShieldAlert } from "lucide-react"
+import { Zap, BarChart2, ShieldAlert, Circle } from "lucide-react"
 import { Card, CardContent, CardDescription } from "@workspace/ui/components/card"
 import { Progress } from "@workspace/ui/components/progress"
 
@@ -14,7 +14,7 @@ export function DifficultyAccuracyCards({ data }: DifficultyAccuracyCardsProps) 
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {data.map((item, i) => {
-                const Icon = ICONS[i]
+                const Icon = ICONS[i] ?? Circle
                 return (
                     <Card key={item.level}>
                         <CardContent className="pt-6 space-y-3">

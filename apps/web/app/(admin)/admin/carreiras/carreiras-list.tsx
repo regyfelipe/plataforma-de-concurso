@@ -35,6 +35,7 @@ type CarreiraItem = {
     title: string
     subtitle?: string
     active: boolean
+    iconUrl?: string
     questionsCount: number
     editHref: string
 }
@@ -135,8 +136,12 @@ export function CarreirasList({
                                     <TableRow key={item.id} className="group transition-colors hover:bg-muted/30">
                                         <TableCell className="py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                                                    <Briefcase className="w-4 h-4" />
+                                                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 overflow-hidden border">
+                                                    {item.iconUrl ? (
+                                                        <img src={item.iconUrl} alt={item.title} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <Briefcase className="w-4 h-4" />
+                                                    )}
                                                 </div>
                                                 <div className="space-y-1">
                                                     <p className="text-sm font-semibold text-foreground leading-none">

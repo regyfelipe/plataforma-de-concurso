@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import { Camera, AlertTriangle, Trash2 } from "lucide-react"
+import { useState, useRef } from "react"
+import { useRouter } from "next/navigation"
+import { Camera, AlertTriangle, Trash2, Loader2 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
@@ -18,6 +19,8 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select"
 import { updateStudentProfile } from "@/actions/profile"
+import { uploadToR2 } from "@/actions/upload"
+import { toast } from "sonner"
 
 const VISIBILIDADE_OPTIONS = [
   { value: "privado", label: "Privado", desc: "Seu perfil não é visível para outros usuários" },
@@ -63,9 +66,46 @@ export function ProfileForm({ profile }: { profile: ProfileData }) {
   const [instagram, setInstagram] = useState(profile.instagram)
   const [tiktok, setTiktok] = useState(profile.tiktok)
   const [facebook, setFacebook] = useState(profile.facebook)
+  const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl)
+  
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const router = useRouter()
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validar tamanho (ex: 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("A imagem deve ter no máximo 2MB")
+      return
+    }
+
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("path", "avatars")
+
+      const result = await uploadToR2(formData)
+      
+      if (result.success && result.url) {
+        setAvatarUrl(result.url)
+        toast.success("Foto carregada com sucesso! Lembre-se de salvar o perfil.")
+      } else {
+        toast.error(result.message || "Erro ao carregar foto")
+      }
+    } catch (err) {
+      toast.error("Erro ao enviar imagem")
+    } finally {
+      setUploading(false)
+    }
+  }
 
   async function handleSave() {
     setSaving(true)
@@ -84,12 +124,16 @@ export function ProfileForm({ profile }: { profile: ProfileData }) {
       facebook,
       carreiraId,
       visibilidade,
+      avatarUrl,
     })
 
     if (result.success) {
       setMessage(result.message)
+      toast.success(result.message)
+      router.refresh() // Força a atualização de todos os componentes (incluindo Sidebar)
     } else {
       setError(result.message || "Não foi possível atualizar o perfil.")
+      toast.error(result.message || "Erro ao atualizar perfil")
     }
 
     setSaving(false)
@@ -115,21 +159,40 @@ export function ProfileForm({ profile }: { profile: ProfileData }) {
         <CardContent className="space-y-6">
           <div className="flex items-start gap-6">
             <div className="flex flex-col items-center gap-3">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={profile.avatarUrl} alt={profile.nome} />
+              <Avatar className="h-20 w-20 border-2 border-muted">
+                <AvatarImage src={avatarUrl} alt={nome} className="object-cover" />
                 <AvatarFallback className="text-xl">{profile.iniciais}</AvatarFallback>
               </Avatar>
-              <Button variant="outline" size="sm" disabled>
-                <Camera className="mr-2 h-4 w-4" />
-                Alterar foto
+              
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                accept="image/*"
+                onChange={handleFileUpload}
+              />
+
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={uploading}
+                onClick={() => fileInputRef.current?.click()}
+                className="relative"
+              >
+                {uploading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Camera className="mr-2 h-4 w-4" />
+                )}
+                {uploading ? "Enviando..." : "Alterar foto"}
               </Button>
-              <p className="text-center text-xs text-muted-foreground">Upload de foto ainda não está habilitado.</p>
+              <p className="text-center text-[10px] text-muted-foreground max-w-[100px]">PNG, JPG ou WebP (Máx. 2MB)</p>
             </div>
 
             <div className="flex flex-1 gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/30">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
               <p className="text-xs text-amber-700 dark:text-amber-400">
-                Não utilize fotos obscenas ou inapropriadas. A responsabilidade pelo conteúdo é do usuário.
+                Sua foto de perfil ajuda outros estudantes e professores a identificarem você na plataforma.
               </p>
             </div>
           </div>
@@ -201,7 +264,7 @@ export function ProfileForm({ profile }: { profile: ProfileData }) {
           </div>
 
           <div className="flex justify-end">
-            <Button onClick={handleSave} disabled={saving}>
+            <Button onClick={handleSave} disabled={saving || uploading}>
               {saving ? "Salvando..." : "Salvar"}
             </Button>
           </div>
@@ -225,7 +288,7 @@ export function ProfileForm({ profile }: { profile: ProfileData }) {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Select value={carreiraId || "none"} onValueChange={(value) => setCarreiraId(value === "none" ? "" : value)}>
+              <Select value={carreiraId || "none"} onValueChange={(value) => setCarreiraId(value === "none" || !value ? "" : value)}>
                 <SelectTrigger className="w-64">
                   <SelectValue placeholder="Selecionar carreira" />
                 </SelectTrigger>

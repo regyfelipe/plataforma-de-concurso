@@ -1,7 +1,6 @@
 "use client"
 
-import * as React from "react"
-import { Timer, Shuffle, RefreshCcw, Tag, Hash, FileText, Info, BrainCircuit, User } from "lucide-react"
+import { Timer, Shuffle, RefreshCcw, Hash, FileText, Info, BrainCircuit, User } from "lucide-react"
 import { Switch } from "@workspace/ui/components/switch"
 import { Label } from "@workspace/ui/components/label"
 import { Input } from "@workspace/ui/components/input"
@@ -10,8 +9,14 @@ import { RadioGroup, RadioGroupItem } from "@workspace/ui/components/radio-group
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@workspace/ui/components/card"
 import { Separator } from "@workspace/ui/components/separator"
+import type { NotebookFormState } from "@/app/(admin)/admin/cadernos/criar/create-notebook-form"
 
-export function NotebookResolutionSettings() {
+interface NotebookResolutionSettingsProps {
+    values: NotebookFormState
+    onChange: <K extends keyof NotebookFormState>(field: K, value: NotebookFormState[K]) => void
+}
+
+export function NotebookResolutionSettings({ values, onChange }: NotebookResolutionSettingsProps) {
     return (
         <Card>
             <CardHeader>
@@ -31,7 +36,11 @@ export function NotebookResolutionSettings() {
                 {/* Modo de Resolução */}
                 <div className="space-y-4">
                     <Label className="text-xs font-semibold">Modo de Resolução</Label>
-                    <RadioGroup defaultValue="study" className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <RadioGroup
+                        value={values.modoResolucao}
+                        onValueChange={(value) => onChange("modoResolucao", value as NotebookFormState["modoResolucao"])}
+                        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                    >
                         <Label
                             htmlFor="study"
                             className="flex items-center justify-between p-4 rounded-lg border bg-muted/30 cursor-pointer hover:bg-muted transition-colors [&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/5"
@@ -80,7 +89,7 @@ export function NotebookResolutionSettings() {
                                 <p className="text-[11px] text-muted-foreground">Exibir comentário após resposta.</p>
                             </div>
                         </div>
-                        <Switch defaultChecked />
+                        <Switch checked={values.exibirExplicacao} onCheckedChange={(checked) => onChange("exibirExplicacao", checked)} />
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -93,7 +102,7 @@ export function NotebookResolutionSettings() {
                                 <p className="text-[11px] text-muted-foreground">Ordem randômica das questões.</p>
                             </div>
                         </div>
-                        <Switch />
+                        <Switch checked={values.embaralhar} onCheckedChange={(checked) => onChange("embaralhar", checked)} />
                     </div>
 
                     <div className="flex items-center gap-4 md:col-span-2 p-4 bg-muted/30 border rounded-lg">
@@ -103,6 +112,8 @@ export function NotebookResolutionSettings() {
                         <div className="flex-1 space-y-1">
                             <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Tempo Limite (Minutos)</Label>
                             <Input
+                                value={values.tempoLimite}
+                                onChange={(event) => onChange("tempoLimite", event.target.value)}
                                 placeholder="0 = Sem limite de tempo"
                                 type="number"
                                 className="h-9 bg-transparent border-none px-0 focus-visible:ring-0 font-bold text-lg text-primary"
@@ -120,13 +131,23 @@ export function NotebookResolutionSettings() {
                             <Label className="text-xs font-semibold flex items-center gap-2">
                                 <Hash className="w-3.5 h-3.5 text-muted-foreground" /> Tags de Gestão
                             </Label>
-                            <Input placeholder="Separe as tags por vírgula..." className="h-10" />
+                            <Input
+                                value={values.tags}
+                                onChange={(event) => onChange("tags", event.target.value)}
+                                placeholder="Separe as tags por vírgula..."
+                                className="h-10"
+                            />
                         </div>
                         <div className="space-y-2">
                             <Label className="text-xs font-semibold flex items-center gap-2">
                                 <User className="w-3.5 h-3.5 text-muted-foreground" /> Professor Responsável
                             </Label>
-                            <Input placeholder="Nome do professor curador" className="h-10" />
+                            <Input
+                                value={values.professor}
+                                onChange={(event) => onChange("professor", event.target.value)}
+                                placeholder="Nome do professor curador"
+                                className="h-10"
+                            />
                         </div>
                     </div>
 
@@ -135,6 +156,8 @@ export function NotebookResolutionSettings() {
                             <FileText className="w-3.5 h-3.5 text-muted-foreground" /> Observações Internas
                         </Label>
                         <Textarea
+                            value={values.observacoes}
+                            onChange={(event) => onChange("observacoes", event.target.value)}
                             placeholder="Descreva o objetivo pedagógico ou detalhes técnicos para outros administradores..."
                             className="min-h-[100px] resize-none"
                         />
