@@ -1,108 +1,98 @@
-"use client"
+import { prisma } from "@workspace/database"
+import { AdminQuestionsList } from "./questions-list"
 
-import { useState } from "react"
-import { X, Filter, Trash2, Edit2, Copy, Plus } from "lucide-react"
-import Link from "next/link"
-import { Button } from "@workspace/ui/components/button"
-import { Badge } from "@workspace/ui/components/badge"
-import { QuestionCard } from "@/components/questoes/card"
-import { MOCK_QUESTIONS } from "@/mocks/questions"
+function htmlToText(value?: string | null) {
+  if (!value) return null
 
-export default function AdminQuestionsListPage() {
-    const [activeFilters, setActiveFilters] = useState(["PF", "Direito Constitucional", "FGV", "2024"])
+  return value
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .trim()
+}
 
-    const removeFilter = (filter: string) => {
-        setActiveFilters(prev => prev.filter(f => f !== filter))
-    }
+export default async function AdminQuestionsListPage() {
+  const [questoes, total] = await Promise.all([
+    prisma.questao.findMany({
+      orderBy: { criadoEm: "desc" },
+      take: 10,
+      include: {
+        disciplina: { select: { nome: true } },
+        assunto: { select: { nome: true } },
+        topico: { select: { nome: true } },
+        banca: { select: { sigla: true, nome: true } },
+        concurso: { select: { nome: true } },
+        carreira: { select: { nome: true } },
+        nivel: { select: { nome: true } },
+        dificuldade: { select: { slug: true, nome: true } },
+        alternativas: { orderBy: { letra: "asc" } },
+        objetivos: { select: { descricao: true } },
+        referencias: { select: { texto: true } },
+        videos: { select: { titulo: true, url: true } },
+        autor: { select: { id: true, nome: true } },
+      },
+    }),
+    prisma.questao.count(),
+  ])
 
-    return (
-        <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/10">
-            <div className="max-w-5xl mx-auto py-12 px-4 space-y-8">
-                
-                {/* Header da Página */}
-                <div className="flex flex-col md:flex-row items-end justify-between gap-6 border-b border-border/10 pb-8">
-                    <div className="space-y-1">
-                        <h1 className="text-3xl font-black tracking-tighter uppercase ">
-                           Banco de Questões <span className="text-primary ">.</span>
-                        </h1>
-                      
-                    </div>
-                    
-                   
-                </div>
+  const questions = questoes.map((questao) => ({
+    id: questao.id,
+    code: questao.code,
+    discipline: questao.disciplina?.nome ?? "Sem disciplina",
+    subject: questao.assunto?.nome ?? null,
+    topic: questao.topico?.nome ?? null,
+    board: questao.banca?.sigla ?? questao.banca?.nome ?? null,
+    institution: questao.instituicao ?? questao.concurso?.nome ?? null,
+    career: questao.carreira?.nome ?? null,
+    educationLevel: questao.nivel?.nome ?? null,
+    year: questao.ano ?? undefined,
+    questionText: htmlToText(questao.enunciado) ?? "Questão sem enunciado",
+    supportText: htmlToText(questao.textoApoio),
+    difficulty: questao.dificuldade?.slug ?? "medio",
+    isUnique: questao.isInedita,
+    access: questao.acesso,
+    visibility: questao.visibilidade,
+    status: questao.status,
+    resolution: htmlToText(questao.resolucao),
+    alternatives: questao.alternativas.map((alternativa) => ({
+      id: alternativa.id,
+      letter: alternativa.letra,
+      text: htmlToText(alternativa.texto) ?? "",
+      isCorrect: alternativa.isCorreta,
+      percentage: alternativa.percentual ? Number(alternativa.percentual) : undefined,
+      explanation: htmlToText(alternativa.explicacao) ?? undefined,
+      reference: alternativa.referencia ?? undefined,
+      tip: alternativa.dica ?? undefined,
+    })),
+    objectives: questao.objetivos.map((objetivo) => objetivo.descricao),
+    references: questao.referencias.map((referencia) => referencia.texto),
+    videos: questao.videos.map((video) => ({
+      title: video.titulo,
+      url: video.url,
+    })),
+    stats: {
+      totalAnswers: questao.totalRespostas,
+      correctRate: Number(questao.taxaAcerto),
+      averageTimeSeconds: questao.tempoMedioSeg,
+    },
+    commentsCount: questao.totalComentarios,
+    reportsCount: questao.totalDenuncias,
+    createdAt: questao.criadoEm.toISOString(),
+    updatedAt: questao.atualizadoEm.toISOString(),
+    author: {
+      id: questao.autor?.id ?? "admin",
+      name: questao.autor?.nome ?? "Administrador",
+    },
+  }))
 
-                {/* Barra de Filtros Selecionados */}
-                {activeFilters.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-3 bg-muted/5 p-4 rounded-2xl border border-border/40 animate-in fade-in slide-in-from-top-1 duration-300">
-                        <div className="flex items-center gap-2 mr-2">
-                            <Filter className="w-3 h-3 text-primary" />
-                            <span className="text-[9px] font-black uppercase tracking-widest text-foreground/40">Filtros:</span>
-                        </div>
-                        
-                        {activeFilters.map((filter) => (
-                            <Badge 
-                                key={filter} 
-                                variant="secondary"
-                                className="h-7 px-3 rounded-full bg-background border-border/60 text-[10px] font-bold uppercase tracking-wide flex items-center gap-2 group hover:border-primary/40 transition-colors"
-                            >
-                                {filter}
-                                <button 
-                                    onClick={() => removeFilter(filter)}
-                                    className="p-0.5 rounded-full hover:bg-red-500 hover:text-white transition-all"
-                                >
-                                    <X className="w-2.5 h-2.5" />
-                                </button>
-                            </Badge>
-                        ))}
-
-                        <div className="h-4 w-[1px] bg-border/40 mx-2" />
-
-                        <button 
-                            onClick={() => setActiveFilters([])}
-                            className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 hover:text-red-500 flex items-center gap-1.5 transition-colors ml-auto"
-                        >
-                            <Trash2 className="w-3 h-3" />
-                            Limpar Tudo
-                        </button>
-                    </div>
-                )}
-
-                {/* Lista de Questões - Visão Admin */}
-                <div className="space-y-10">
-                    {MOCK_QUESTIONS.map((q) => (
-                        <div key={q.id} className="relative group">
-                            {/* Ações Rápidas Flutuantes de Admin */}
-                            <div className="absolute right-6 top-6 z-10 flex gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
-                                <Button variant="outline" size="sm" className="h-8 rounded-lg bg-background/80 backdrop-blur border-border/60 text-[9px] font-black uppercase tracking-widest hover:border-primary/40 hover:text-primary">
-                                    <Edit2 className="w-3 h-3 mr-2" /> Editar
-                                </Button>
-                                <Button variant="outline" size="sm" className="h-8 rounded-lg bg-background/80 backdrop-blur border-border/60 text-[9px] font-black uppercase tracking-widest hover:border-primary/40 hover:text-primary">
-                                    <Copy className="w-3 h-3 mr-2" /> Duplicar
-                                </Button>
-                            </div>
-
-                            {/* O Card que o aluno vê, mas com poder de Admin liberado */}
-                            <QuestionCard 
-                                question={q} 
-                                userRole="ADMIN" 
-                                currentUserId="admin"
-                            />
-                        </div>
-                    ))}
-                </div>
-
-                {/* Paginação Minimalista */}
-                <div className="flex justify-center py-12 border-t border-border/10">
-                    <div className="flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map(n => (
-                            <button key={n} className={`w-8 h-8 text-[11px] font-black rounded-full transition-all ${n === 1 ? 'bg-foreground text-background shadow-xl' : 'text-muted-foreground/30 hover:bg-muted/10'}`}>
-                                {n}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    )
+  return (
+    <AdminQuestionsList
+      questions={questions}
+      totalPages={Math.max(1, Math.ceil(total / 10))}
+    />
+  )
 }

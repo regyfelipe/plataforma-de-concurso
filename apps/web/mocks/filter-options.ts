@@ -30,6 +30,12 @@ export const ASSUNTOS_MOCK = [
     { label: "Morfologia", value: "mor" },
 ]
 
+export const TOPICOS_MOCK = [
+    { label: "Remédios Constitucionais", value: "rc" },
+    { label: "Processo Administrativo", value: "pa" },
+    { label: "Regência", value: "reg" },
+]
+
 export const ANOS_MOCK = [
     { label: "2024", value: "2024" },
     { label: "2023", value: "2023" },
@@ -62,10 +68,13 @@ export const PROFESSOR_INDICA_MOCK = [
     { label: "Não", value: "false" },
 ]
 
-export const MEUS_CADERNOS_MOCK = [
-    { label: "Revisão PF 2024", value: "cad1" },
-    { label: "Questões Difíceis ADM", value: "cad2" },
-    { label: "Simulado Final PRF", value: "cad3" },
+export const CARGOS_MOCK = [
+    { label: "Policial Rodoviário Federal", value: "prf" },
+    { label: "Agente de Polícia Federal", value: "pf_agente" },
+    { label: "Auditor Fiscal", value: "auditor" },
+    { label: "Analista Judiciário", value: "analista_jud" },
+    { label: "Técnico Judiciário", value: "tecnico_jud" },
+    { label: "Delegado de Polícia", value: "delegado" },
 ]
 
 export const CADERNOS_PROFESSOR_MOCK = [

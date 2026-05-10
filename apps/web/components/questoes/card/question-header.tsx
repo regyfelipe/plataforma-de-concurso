@@ -99,9 +99,10 @@ export function QuestionHeader({
                         </span>
 
                         <div className={`relative transition-all duration-300 ${isExpanded ? "" : needsTruncation ? "max-h-[100px] overflow-hidden" : ""}`}>
-                            <div className={`text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap font-medium ${isExpanded ? "" : needsTruncation ? "line-clamp-4" : ""}`}>
-                                {supportText}
-                            </div>
+                            <div 
+                                className="text-sm text-foreground/90 leading-relaxed font-medium prose dark:prose-invert max-w-none"
+                                dangerouslySetInnerHTML={{ __html: supportText }}
+                            />
 
                             {needsTruncation && !isExpanded && (
                                 <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-background to-transparent" />

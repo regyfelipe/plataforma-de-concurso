@@ -314,6 +314,8 @@ export async function deleteBanca(id: string) {
 
 export async function createConcursoInline(data: {
   nome: string
+  sigla?: string
+  cargo?: string
   bancaId?: string
   carreiraId?: string
   nivelId?: string
@@ -336,12 +338,14 @@ export async function deleteConcurso(id: string) {
   revalidatePath("/admin/concursos")
 }
 
-export async function createTipoQuestaoInline(nome: string, slug: string) {
+export async function createTipoQuestaoInline(nome: string, slug: string, modelo: string, quantidadeAlternativas: number) {
   await requireAdmin()
   await prisma.tipoQuestao.create({
     data: {
       nome,
       slug: slug.toLowerCase(),
+      modelo,
+      quantidadeAlternativas,
       ativo: true
     }
   })
@@ -353,6 +357,24 @@ export async function deleteTipoQuestao(id: string) {
   await prisma.tipoQuestao.delete({ where: { id } })
   revalidatePath("/admin/tipos-questao")
 }
+
+export async function createEducacionalInline(nome: string) {
+  await requireAdmin()
+  await prisma.nivelEducacional.create({
+    data: {
+      nome,
+      ativo: true
+    }
+  })
+  revalidatePath("/admin/educacional")
+}
+
+export async function deleteEducacional(id: string) {
+  await requireAdmin()
+  await prisma.nivelEducacional.delete({ where: { id } })
+  revalidatePath("/admin/educacional")
+}
+
 
 
 

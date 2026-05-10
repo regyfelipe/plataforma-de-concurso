@@ -65,9 +65,10 @@ export function QuestionExplanation({ resolution, objectives, references, altern
                     <div className="space-y-4 animate-in fade-in duration-300">
                         {resolution ? (
                             <div className="bg-primary/5 p-6 rounded-2xl border border-primary/20">
-                                <div className="prose dark:prose-invert max-w-none text-base leading-relaxed text-foreground/80 whitespace-pre-wrap font-medium">
-                                    {resolution}
-                                </div>
+                                <div 
+                                    className="prose dark:prose-invert max-w-none text-base leading-relaxed text-foreground/80 font-medium"
+                                    dangerouslySetInnerHTML={{ __html: resolution }}
+                                />
                             </div>
                         ) : (
                             <div className="p-12 text-center text-muted-foreground bg-muted/20 rounded-2xl border border-dashed">
@@ -100,14 +101,15 @@ export function QuestionExplanation({ resolution, objectives, references, altern
                                 </div>
 
                                 <div className="ml-9 space-y-3">
-                                    <p className="text-sm text-foreground/80 italic line-clamp-1 opacity-60">
-                                        "{alt.text}"
-                                    </p>
+                                    <div 
+                                        className="text-sm text-foreground/80 italic line-clamp-1 opacity-60"
+                                        dangerouslySetInnerHTML={{ __html: alt.text }}
+                                    />
 
                                     {alt.explanation ? (
                                         <div className="flex gap-2 text-sm text-foreground/90 leading-relaxed font-medium">
                                             <Info className="w-4 h-4 mt-0.5 shrink-0 text-primary/60" />
-                                            <p>{alt.explanation}</p>
+                                            <div dangerouslySetInnerHTML={{ __html: alt.explanation }} />
                                         </div>
                                     ) : (
                                         <p className="text-xs text-muted-foreground italic">Sem justificativa detalhada.</p>

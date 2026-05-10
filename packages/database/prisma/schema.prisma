@@ -507,6 +507,8 @@ model Carreira {
 model Concurso {
   id         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   nome       String         @db.VarChar(255)
+  sigla      String?        @db.VarChar(20)
+  cargo      String?        @db.VarChar(150)
   bancaId    String?        @map("banca_id") @db.Uuid
   carreiraId String?        @map("carreira_id") @db.Uuid
   nivelId    String?        @map("nivel_id") @db.Uuid
@@ -584,10 +586,12 @@ model Subtopico {
 }
 
 model TipoQuestao {
-  id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  nome     String   @unique @db.VarChar(100)
-  slug     String   @unique @db.VarChar(50)
-  ativo    Boolean  @default(true)
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome                  String   @unique @db.VarChar(100)
+  slug                  String   @unique @db.VarChar(50)
+  modelo                String?  @db.VarChar(20) // certo_errado, multipla_escolha
+  quantidadeAlternativas Int?     @default(5) @map("quantidade_alternativas") @db.SmallInt
+  ativo                 Boolean  @default(true)
   criadoEm DateTime @default(now()) @map("criado_em")
 
   questoes Questao[]
@@ -609,6 +613,7 @@ model Questao {
   dificuldadeId    String?             @map("dificuldade_id") @db.Uuid
   tipoId           String?             @map("tipo_id") @db.Uuid
   instituicao      String?             @db.VarChar(150)
+  cargo            String?             @db.VarChar(150)
   ano              Int?                @db.SmallInt
   isInedita        Boolean             @default(false) @map("is_inedita")
   enunciado        String

@@ -115,11 +115,10 @@ export function QuestionCard({ question, onDelete, onDuplicate, userRole = 'STUD
 
             <CardContent className="pt-8 space-y-8">
 
-                <div className="prose dark:prose-invert max-w-none">
-                    <p className="text-xl font-semibold leading-relaxed text-foreground/90 tracking-tight">
-                        {question.questionText}
-                    </p>
-                </div>
+                <div 
+                    className="prose dark:prose-invert max-w-none text-xl font-semibold leading-relaxed text-foreground/90 tracking-tight"
+                    dangerouslySetInnerHTML={{ __html: question.questionText }}
+                />
 
                 <QuestionAlternatives
                     alternatives={question.alternatives}

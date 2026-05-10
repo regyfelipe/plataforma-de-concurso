@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Check, Search } from "lucide-react"
+import { Check, Search, Plus } from "lucide-react"
 import {
     Combobox,
     ComboboxInput,
@@ -18,24 +18,38 @@ interface FilterSelectProps {
     placeholder: string
     options: { label: string; value: string }[]
     onValueChange?: (value: string) => void
+    value?: string
     isMulti?: boolean
+    disabled?: boolean
+    emptyText?: string
 }
 
-export function FilterSelect({ label, placeholder, options, onValueChange, isMulti = true }: FilterSelectProps) {
-    const [selectedValues, setSelectedValues] = useState<string[]>([])
+export function FilterSelect({
+    label,
+    placeholder,
+    options,
+    onValueChange,
+    value,
+    isMulti = true,
+    disabled = false,
+    emptyText = "Nenhuma opção encontrada",
+}: FilterSelectProps) {
+    const [internalValues, setInternalValues] = useState<string[]>([])
     const [searchTerm, setSearchTerm] = useState("")
+    const selectedValues = value !== undefined ? (value ? [value] : []) : internalValues
 
     const toggleValue = (value: string) => {
+        const isSelected = selectedValues.includes(value)
         if (!isMulti) {
-            setSelectedValues([value])
-            onValueChange?.(value)
+            const newValue = isSelected ? "" : value
+            setInternalValues(isSelected ? [] : [value])
+            onValueChange?.(newValue)
             return
         }
-        const isSelected = selectedValues.includes(value)
         const next = isSelected
             ? selectedValues.filter((v) => v !== value)
             : [...selectedValues, value]
-        setSelectedValues(next)
+        setInternalValues(next)
         if (!isSelected) onValueChange?.(value)
     }
 
@@ -60,6 +74,7 @@ export function FilterSelect({ label, placeholder, options, onValueChange, isMul
                     placeholder={getDisplayValue()}
                     showTrigger={true}
                     showClear={selectedValues.length > 0}
+                    disabled={disabled}
                 />
 
                 <ComboboxContent className="w-[var(--radix-combobox-trigger-width)]">
@@ -70,6 +85,7 @@ export function FilterSelect({ label, placeholder, options, onValueChange, isMul
                             placeholder="Busca rápida..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
+                            disabled={disabled}
                             className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
                         />
                     </div>
@@ -101,9 +117,27 @@ export function FilterSelect({ label, placeholder, options, onValueChange, isMul
                         })}
 
                         {filteredOptions.length === 0 && (
-                            <ComboboxEmpty className="py-6 text-center text-sm text-muted-foreground">
-                                Nenhuma opção encontrada
-                            </ComboboxEmpty>
+                            <div className="p-1">
+                                {searchTerm.trim() ? (
+                                    <div
+                                        role="option"
+                                        onClick={() => {
+                                            toggleValue(searchTerm)
+                                            setSearchTerm("")
+                                        }}
+                                        className="flex items-center gap-2.5 px-2 py-1.5 rounded-sm text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors border border-dashed border-primary/30"
+                                    >
+                                        <Plus className="h-3.5 w-3.5 text-primary" />
+                                        <span className="truncate flex-1">
+                                            Usar "<span className="font-semibold">{searchTerm}</span>"
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <ComboboxEmpty className="py-6 text-center text-sm text-muted-foreground">
+                                        {emptyText}
+                                    </ComboboxEmpty>
+                                )}
+                            </div>
                         )}
                     </ComboboxList>
 
@@ -119,7 +153,7 @@ export function FilterSelect({ label, placeholder, options, onValueChange, isMul
                                     variant="ghost"
                                     size="sm"
                                     className="h-7 text-xs text-destructive hover:text-destructive"
-                                    onClick={() => setSelectedValues([])}
+                                    onClick={() => setInternalValues([])}
                                 >
                                     Limpar
                                 </Button>

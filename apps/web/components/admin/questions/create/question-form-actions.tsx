@@ -9,9 +9,10 @@ interface QuestionFormActionsProps {
     onPreview?: () => void
     onSaveDraft?: () => void
     onPublish?: () => void
+    isSubmitting?: boolean
 }
 
-export function QuestionFormActions({ onPreview, onSaveDraft, onPublish }: QuestionFormActionsProps) {
+export function QuestionFormActions({ onPreview, onSaveDraft, onPublish, isSubmitting }: QuestionFormActionsProps) {
     return (
         <div className="sticky top-0 z-30 w-full bg-background/95 backdrop-blur border-b">
             <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -21,15 +22,15 @@ export function QuestionFormActions({ onPreview, onSaveDraft, onPublish }: Quest
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" onClick={onSaveDraft}>
-                        Salvar Rascunho
+                    <Button variant="ghost" size="sm" onClick={onSaveDraft} disabled={isSubmitting}>
+                        {isSubmitting ? "Salvando..." : "Salvar Rascunho"}
                     </Button>
                     <Button variant="outline" size="sm" onClick={onPreview}>
                         <Eye className="mr-2 h-3.5 w-3.5" />
                         Pré-visualizar
                     </Button>
-                    <Button size="sm" onClick={onPublish}>
-                        Publicar Agora
+                    <Button size="sm" onClick={onPublish} disabled={isSubmitting}>
+                        {isSubmitting ? "Publicando..." : "Publicar Agora"}
                     </Button>
                 </div>
             </div>

@@ -1,20 +1,36 @@
-import { TaxonomyList } from "@/components/admin/taxonomy-list"
 import { prisma } from "@workspace/database"
+import { deleteEducacional } from "@/actions/admin-taxonomy"
+import { EducacionalList } from "./educacional-list"
+import { CreateEducacionalModal } from "./create-educacional-modal"
 
 export default async function EducacionalPage() {
-  const niveis = await prisma.nivelEducacional.findMany({ orderBy: { nome: "asc" } })
+    const niveis = await prisma.nivelEducacional.findMany({
+        orderBy: { nome: "asc" },
+        include: {
+            _count: {
+                select: { questoes: true }
+            }
+        }
+    })
 
-  return (
-    <TaxonomyList
-      title="Níveis Educacionais"
-      description="Gestão de Questões"
-      createHref="/admin/educacional/criar"
-      createLabel="Criar Nível"
-      items={niveis.map((item) => ({
+    const items = niveis.map((item) => ({
         id: item.id,
         title: item.nome,
         active: item.ativo,
-      }))}
-    />
-  )
+        questionsCount: item._count.questoes,
+        editHref: `/admin/educacional/editar/${item.id}`,
+    }))
+
+    async function handleDelete(id: string) {
+        "use server"
+        await deleteEducacional(id)
+    }
+
+    return (
+        <EducacionalList
+            items={items}
+            createAction={<CreateEducacionalModal />}
+            onDelete={handleDelete}
+        />
+    )
 }

@@ -5,13 +5,7 @@ import { Layout, Library, AlignLeft, Image as ImageIcon, Briefcase, Landmark, Bo
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { Textarea } from "@workspace/ui/components/textarea"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue
-} from "@workspace/ui/components/select"
+import { FilterSelect } from "@/components/questoes/filter/filter-select"
 import { DISCIPLINAS_MOCK, BANCAS_MOCK, CONCURSOS_MOCK } from "@/data/mocks/admin"
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@workspace/ui/components/card"
@@ -35,33 +29,20 @@ export function NotebookBasicInfo() {
                 </div>
             </CardHeader>
             <CardContent className="space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Título e Capa */}
-                    <div className="space-y-6">
-                        <div className="space-y-2">
-                            <Label className="text-xs font-semibold flex items-center gap-2">
-                                <Library className="w-3.5 h-3.5 text-muted-foreground" />
-                                Título do Caderno
-                            </Label>
-                            <Input
-                                placeholder="Ex: Caderno PF 2026 - Direito Constitucional"
-                                className="h-10"
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="text-xs font-semibold flex items-center gap-2">
-                                <ImageIcon className="w-3.5 h-3.5 text-muted-foreground" />
-                                Capa Opcional
-                            </Label>
-                            <div className="h-24 border-2 border-dashed rounded-lg flex flex-col items-center justify-center hover:bg-muted/50 transition-colors cursor-pointer group gap-2">
-                                <Plus className="w-5 h-5 text-muted-foreground group-hover:text-primary" />
-                                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Upload de Imagem</span>
-                            </div>
-                        </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Coluna 1: Título */}
+                    <div className="space-y-2">
+                        <Label className="text-xs font-semibold flex items-center gap-2">
+                            <Library className="w-3.5 h-3.5 text-muted-foreground" />
+                            Título do Caderno
+                        </Label>
+                        <Input
+                            placeholder="Ex: Caderno PF 2026 - Direito Constitucional"
+                            className="h-12 text-sm"
+                        />
                     </div>
 
-                    {/* Descrição */}
+                    {/* Coluna 2: Descrição */}
                     <div className="space-y-2">
                         <Label className="text-xs font-semibold flex items-center gap-2">
                             <AlignLeft className="w-3.5 h-3.5 text-muted-foreground" />
@@ -69,7 +50,7 @@ export function NotebookBasicInfo() {
                         </Label>
                         <Textarea
                             placeholder="Descreva o foco deste conjunto de questões e dicas para o estudo..."
-                            className="min-h-[160px] resize-none"
+                            className="h-12 min-h-[48px] resize-none text-sm"
                         />
                     </div>
                 </div>
@@ -79,71 +60,47 @@ export function NotebookBasicInfo() {
                 {/* Grid de Metadados */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-2">
-                        <Label className="text-xs font-semibold flex items-center gap-2">
-                            <Briefcase className="w-3.5 h-3.5 text-muted-foreground" />
-                            Carreira
-                        </Label>
-                        <Select>
-                            <SelectTrigger className="w-full h-10">
-                                <SelectValue placeholder="Selecione a Carreira" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="policial">Policial</SelectItem>
-                                <SelectItem value="tribunais">Tribunais</SelectItem>
-                                <SelectItem value="administrativa">Administrativa</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <FilterSelect 
+                            label="Carreira"
+                            placeholder="Selecione a Carreira"
+                            options={[
+                                { label: "Policial", value: "policial" },
+                                { label: "Tribunais", value: "tribunais" },
+                                { label: "Administrativa", value: "administrativa" },
+                            ]}
+                            isMulti={false}
+                        />
                     </div>
 
                     <div className="space-y-2">
-                        <Label className="text-xs font-semibold flex items-center gap-2">
-                            <Landmark className="w-3.5 h-3.5 text-muted-foreground" />
-                            Concurso Base
-                        </Label>
-                        <Select>
-                            <SelectTrigger className="w-full h-10">
-                                <SelectValue placeholder="Selecione o Concurso" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {CONCURSOS_MOCK.map(c => (
-                                    <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <FilterSelect 
+                            label="Concurso Base"
+                            placeholder="Selecione o Concurso"
+                            options={CONCURSOS_MOCK.map(c => ({ label: c.name, value: c.id }))}
+                            isMulti={false}
+                        />
                     </div>
 
                     <div className="space-y-2">
-                        <Label className="text-xs font-semibold flex items-center gap-2">
-                            <BookOpen className="w-3.5 h-3.5 text-muted-foreground" />
-                            Disciplina Principal
-                        </Label>
-                        <Select>
-                            <SelectTrigger className="w-full h-10">
-                                <SelectValue placeholder="Selecione a Disciplina" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {DISCIPLINAS_MOCK.map(d => (
-                                    <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <FilterSelect 
+                            label="Disciplina Principal"
+                            placeholder="Selecione a Disciplina"
+                            options={DISCIPLINAS_MOCK.map(d => ({ label: d.name, value: d.id }))}
+                            isMulti={false}
+                        />
                     </div>
 
                     <div className="space-y-2">
-                        <Label className="text-xs font-semibold flex items-center gap-2">
-                            <BarChart3 className="w-3.5 h-3.5 text-muted-foreground" />
-                            Dificuldade
-                        </Label>
-                        <Select>
-                            <SelectTrigger className="w-full h-10">
-                                <SelectValue placeholder="Nível" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="facil">Fácil</SelectItem>
-                                <SelectItem value="medio">Médio</SelectItem>
-                                <SelectItem value="dificil">Difícil</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <FilterSelect 
+                            label="Dificuldade"
+                            placeholder="Nível"
+                            options={[
+                                { label: "Fácil", value: "facil" },
+                                { label: "Médio", value: "medio" },
+                                { label: "Difícil", value: "dificil" },
+                            ]}
+                            isMulti={false}
+                        />
                     </div>
 
                     <div className="space-y-2">

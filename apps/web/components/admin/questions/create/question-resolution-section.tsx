@@ -1,13 +1,13 @@
-"use client"
-
-import { useState } from "react"
 import { TiptapEditor } from "@/components/editor/tiptap-editor"
 import { Label } from "@workspace/ui/components/label"
 import { Card, CardContent } from "@workspace/ui/components/card"
 
-export function QuestionResolutionSection() {
-    const [resolution, setResolution] = useState("")
+interface QuestionResolutionSectionProps {
+    resolution: string
+    onResolutionChange: (value: string) => void
+}
 
+export function QuestionResolutionSection({ resolution, onResolutionChange }: QuestionResolutionSectionProps) {
     return (
         <section className="space-y-4">
             <div className="flex items-center gap-2 px-1">
@@ -19,7 +19,7 @@ export function QuestionResolutionSection() {
             <Card>
                 <CardContent className="p-6 space-y-2">
                     <Label>Comentário do Professor / Gabarito Comentado</Label>
-                    <TiptapEditor content={resolution} onChange={setResolution} />
+                    <TiptapEditor content={resolution} onChange={onResolutionChange} />
                 </CardContent>
             </Card>
         </section>

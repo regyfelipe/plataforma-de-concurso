@@ -86,11 +86,12 @@ export function QuestionAlternatives({
                                         }`}>
                                             {isSubmitted && showCorrect ? <CheckCircle2 className="w-4 h-4" /> : alt.letter}
                                         </div>
-                                        <span className={`text-base leading-relaxed transition-colors ${
-                                            isSelected ? "text-foreground font-semibold" : "text-foreground/70"
-                                        } ${isProfessor && isCorrect ? "font-bold text-green-700 dark:text-green-400" : ""} ${isExcluded ? "line-through opacity-50" : ""}`}>
-                                            {alt.text}
-                                        </span>
+                                        <div 
+                                            className={`text-base leading-relaxed transition-colors ${
+                                                isSelected ? "text-foreground font-semibold" : "text-foreground/70"
+                                            } ${isProfessor && isCorrect ? "font-bold text-green-700 dark:text-green-400" : ""} ${isExcluded ? "line-through opacity-50" : ""}`}
+                                            dangerouslySetInnerHTML={{ __html: alt.text }}
+                                        />
                                     </div>
 
                                     {/* Porcentagem no topo, à direita */}

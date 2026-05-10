@@ -24,6 +24,7 @@ export default async function ConcursosPage() {
     const items = concursos.map((item) => ({
         id: item.id,
         nome: item.nome,
+        cargo: item.cargo || undefined,
         banca: item.banca?.sigla,
         carreira: item.carreira?.nome,
         nivel: item.nivel?.nome,

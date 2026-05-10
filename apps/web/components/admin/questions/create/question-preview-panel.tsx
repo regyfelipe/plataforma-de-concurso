@@ -4,7 +4,12 @@ import { Settings2 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
 
-export function QuestionPreviewPanel() {
+interface QuestionPreviewPanelProps {
+    onPublish: () => void
+    isSubmitting: boolean
+}
+
+export function QuestionPreviewPanel({ onPublish, isSubmitting }: QuestionPreviewPanelProps) {
     return (
         <section className="space-y-4">
             <div className="flex items-center gap-2 px-1">
@@ -24,7 +29,13 @@ export function QuestionPreviewPanel() {
                             Certifique-se de que o gabarito foi selecionado e a classificação está correta.
                         </p>
                     </div>
-                    <Button size="sm">Publicar Questão Agora</Button>
+                    <Button 
+                        size="sm" 
+                        onClick={onPublish} 
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting ? "Publicando..." : "Publicar Questão Agora"}
+                    </Button>
                 </CardContent>
             </Card>
         </section>

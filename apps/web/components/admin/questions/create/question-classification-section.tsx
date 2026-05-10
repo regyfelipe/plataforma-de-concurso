@@ -2,25 +2,76 @@
 
 import { FilterSelect } from "@/components/questoes/filter/filter-select"
 import { Card, CardContent } from "@workspace/ui/components/card"
+import { Input } from "@workspace/ui/components/input"
+import { Label } from "@workspace/ui/components/label"
+
+export interface QuestionTaxonomyOptions {
+    disciplinas: { id: string; nome: string; code: string }[]
+    assuntos: { id: string; nome: string; disciplinaId: string }[]
+    topicos: { id: string; nome: string; assuntoId: string }[]
+    subtopicos: { id: string; nome: string; topicoId: string }[]
+    bancas: { id: string; nome: string; sigla: string }[]
+    concursos: { id: string; nome: string; ano: number | null }[]
+    carreiras: { id: string; nome: string }[]
+    niveis: { id: string; nome: string }[]
+    dificuldades: { id: string; nome: string; slug: string }[]
+    tiposQuestao: { 
+        id: string; 
+        nome: string; 
+        slug: string; 
+        modelo: string | null; 
+        quantidadeAlternativas: number | null 
+    }[]
+}
 
 interface QuestionClassificationSectionProps {
     onTypeChange?: (type: string) => void
     onFieldChange?: (field: string, value: string) => void
     values: Record<string, string>
+    taxonomy: QuestionTaxonomyOptions
 }
 
-export function QuestionClassificationSection({ onTypeChange, onFieldChange, values }: QuestionClassificationSectionProps) {
-    // Mocks para demonstração do FilterSelect
-    const MOCK_OPTIONS = [
-        { label: "Opção Exemplo 1", value: "1" },
-        { label: "Opção Exemplo 2", value: "2" },
-        { label: "Opção Exemplo 3", value: "3" },
-    ]
-
+export function QuestionClassificationSection({ onTypeChange, onFieldChange, values, taxonomy }: QuestionClassificationSectionProps) {
     const handleFieldChange = (field: string) => (value: string) => {
-        if (onFieldChange) onFieldChange(field, value)
-        if (field === 'type' && onTypeChange) onTypeChange(value)
+        if (field === "type") {
+            const selectedType = taxonomy.tiposQuestao.find((type) => type.slug === value)
+            onFieldChange?.("type", value)
+            onFieldChange?.("tipoId", selectedType?.id ?? "")
+            onTypeChange?.(value)
+            return
+        }
+
+        onFieldChange?.(field, value)
     }
+
+    const hasDisciplina = Boolean(values.disciplinaId)
+    const hasAssunto = Boolean(values.assuntoId)
+    const hasTopico = Boolean(values.topicoId)
+
+    const assuntoOptions = hasDisciplina
+        ? taxonomy.assuntos
+            .filter((assunto) => assunto.disciplinaId === values.disciplinaId)
+            .map((assunto) => ({ label: assunto.nome, value: assunto.id }))
+        : []
+
+    const topicoOptions = hasAssunto
+        ? taxonomy.topicos
+            .filter((topico) => topico.assuntoId === values.assuntoId)
+            .map((topico) => ({ label: topico.nome, value: topico.id }))
+        : []
+
+    const subtopicoOptions = hasTopico
+        ? taxonomy.subtopicos
+            .filter((subtopico) => subtopico.topicoId === values.topicoId)
+            .map((subtopico) => ({ label: subtopico.nome, value: subtopico.id }))
+        : []
+
+    const typeOptions = taxonomy.tiposQuestao.length > 0
+        ? taxonomy.tiposQuestao.map((type) => ({ label: type.nome, value: type.slug }))
+        : [
+            { label: "Múltipla Escolha", value: "multipla_escolha" },
+            { label: "Certo / Errado", value: "certo_errado" },
+        ]
 
     return (
         <section className="space-y-4">
@@ -37,36 +88,49 @@ export function QuestionClassificationSection({ onTypeChange, onFieldChange, val
                         <FilterSelect 
                             label="Disciplina" 
                             placeholder="Pesquisar disciplina..." 
-                            options={MOCK_OPTIONS} 
+                            options={taxonomy.disciplinas.map((disciplina) => ({
+                                label: `${disciplina.code} - ${disciplina.nome}`,
+                                value: disciplina.id,
+                            }))} 
                             isMulti={false}
-                            onValueChange={handleFieldChange('discipline')}
+                            value={values.disciplinaId}
+                            onValueChange={handleFieldChange('disciplinaId')}
                         />
                     </div>
                     <div className="space-y-1.5">
                         <FilterSelect 
                             label="Assunto" 
-                            placeholder="Pesquisar assunto..." 
-                            options={MOCK_OPTIONS} 
+                            placeholder={hasDisciplina ? "Pesquisar assunto..." : "Selecione a disciplina primeiro"} 
+                            options={assuntoOptions} 
                             isMulti={false}
-                            onValueChange={handleFieldChange('subject')}
+                            value={values.assuntoId}
+                            disabled={!hasDisciplina}
+                            emptyText="Nenhum assunto vinculado a esta disciplina"
+                            onValueChange={handleFieldChange('assuntoId')}
                         />
                     </div>
                     <div className="space-y-1.5">
                         <FilterSelect 
                             label="Tópico" 
-                            placeholder="Pesquisar tópico..." 
-                            options={MOCK_OPTIONS} 
+                            placeholder={hasAssunto ? "Pesquisar tópico..." : "Selecione o assunto primeiro"} 
+                            options={topicoOptions} 
                             isMulti={false}
-                            onValueChange={handleFieldChange('topic')}
+                            value={values.topicoId}
+                            disabled={!hasAssunto}
+                            emptyText="Nenhum tópico vinculado a este assunto"
+                            onValueChange={handleFieldChange('topicoId')}
                         />
                     </div>
                     <div className="space-y-1.5">
                         <FilterSelect 
                             label="Subtópico" 
-                            placeholder="Caso tenha..." 
-                            options={MOCK_OPTIONS} 
+                            placeholder={hasTopico ? "Caso tenha..." : "Selecione o tópico primeiro"} 
+                            options={subtopicoOptions} 
                             isMulti={false}
-                            onValueChange={handleFieldChange('subtopic')}
+                            value={values.subtopicoId}
+                            disabled={!hasTopico}
+                            emptyText="Nenhum subtópico vinculado a este tópico"
+                            onValueChange={handleFieldChange('subtopicoId')}
                         />
                     </div>
 
@@ -75,40 +139,71 @@ export function QuestionClassificationSection({ onTypeChange, onFieldChange, val
                         <FilterSelect 
                             label="Banca" 
                             placeholder="Ex: FGV, CESPE" 
-                            options={MOCK_OPTIONS} 
+                            options={taxonomy.bancas.map((banca) => ({
+                                label: banca.sigla,
+                                value: banca.id,
+                            }))} 
                             isMulti={false}
-                            onValueChange={handleFieldChange('board')}
+                            value={values.bancaId}
+                            onValueChange={handleFieldChange('bancaId')}
                         />
                     </div>
                     <div className="space-y-1.5">
                         <FilterSelect 
-                            label="Órgão/Instituição" 
-                            placeholder="Pesquisar órgão..." 
-                            options={MOCK_OPTIONS} 
+                            label="Concurso" 
+                            placeholder="Pesquisar Concurso..." 
+                            options={taxonomy.concursos.map((concurso) => ({
+                                label: concurso.ano ? `${concurso.nome} (${concurso.ano})` : concurso.nome,
+                                value: concurso.id,
+                            }))} 
                             isMulti={false}
-                            onValueChange={handleFieldChange('institution')}
+                            value={values.concursoId}
+                            onValueChange={(val) => {
+                                handleFieldChange('concursoId')(val)
+                                // Preenchimento automático do cargo se houver no concurso selecionado
+                                const selected = taxonomy.concursos.find(c => c.id === val)
+                                if (selected?.cargo) {
+                                    onFieldChange?.('cargo', selected.cargo)
+                                }
+                            }}
                         />
                     </div>
                     <div className="space-y-1.5">
                         <FilterSelect 
-                            label="Concurso/Cargo" 
+                            label="Cargo" 
+                            placeholder="Selecione ou digite..." 
+                            options={Array.from(new Set(taxonomy.concursos.map(c => (c as any).cargo).filter(Boolean)))
+                                .map(cargo => ({ label: cargo as string, value: cargo as string }))
+                            }
+                            isMulti={false}
+                            value={values.cargo}
+                            onValueChange={(val) => onFieldChange?.('cargo', val)}
+                        />
+                    </div>
+                    <div className="space-y-1.5">
+                        <FilterSelect 
+                            label="Carreira" 
                             placeholder="Ex: Auditor" 
-                            options={MOCK_OPTIONS} 
+                            options={taxonomy.carreiras.map((carreira) => ({
+                                label: carreira.nome,
+                                value: carreira.id,
+                            }))} 
                             isMulti={false}
-                            onValueChange={handleFieldChange('career')}
+                            value={values.carreiraId}
+                            onValueChange={handleFieldChange('carreiraId')}
                         />
                     </div>
                     <div className="space-y-1.5">
                         <FilterSelect 
                             label="Escolaridade" 
                             placeholder="Selecione nível" 
-                            options={[
-                                { label: "Superior", value: "superior" },
-                                { label: "Médio", value: "medio" },
-                                { label: "Fundamental", value: "fundamental" }
-                            ]} 
+                            options={taxonomy.niveis.map((nivel) => ({
+                                label: nivel.nome,
+                                value: nivel.id,
+                            }))} 
                             isMulti={false}
-                            onValueChange={handleFieldChange('educationLevel')}
+                            value={values.nivelId}
+                            onValueChange={handleFieldChange('nivelId')}
                         />
                     </div>
 
@@ -117,12 +212,12 @@ export function QuestionClassificationSection({ onTypeChange, onFieldChange, val
                         <FilterSelect 
                             label="Ano" 
                             placeholder="Selecione o ano" 
-                            options={[
-                                { label: "2024", value: "2024" },
-                                { label: "2023", value: "2023" },
-                                { label: "2022", value: "2022" }
-                            ]} 
+                            options={Array.from({ length: new Date().getFullYear() - 2000 + 2 }, (_, i) => {
+                                const year = (new Date().getFullYear() + 1 - i).toString();
+                                return { label: year, value: year };
+                            })} 
                             isMulti={false}
+                            value={values.year}
                             onValueChange={handleFieldChange('year')}
                         />
                     </div>
@@ -130,25 +225,21 @@ export function QuestionClassificationSection({ onTypeChange, onFieldChange, val
                         <FilterSelect 
                             label="Dificuldade" 
                             placeholder="Nível estimado" 
-                            options={[
-                                { label: "Muito Fácil", value: "muito_facil" },
-                                { label: "Fácil", value: "facil" },
-                                { label: "Médio", value: "medio" },
-                                { label: "Difícil", value: "dificil" },
-                                { label: "Muito Difícil", value: "muito_dificil" }
-                            ]} 
+                            options={taxonomy.dificuldades.map((dificuldade) => ({
+                                label: dificuldade.nome,
+                                value: dificuldade.id,
+                            }))} 
                             isMulti={false}
-                            onValueChange={handleFieldChange('difficulty')}
+                            value={values.dificuldadeId}
+                            onValueChange={handleFieldChange('dificuldadeId')}
                         />
                     </div>
                     <div className="space-y-1.5">
                         <FilterSelect 
                             label="Tipo da Questão" 
                             placeholder="Formato" 
-                            options={[
-                                { label: "Múltipla Escolha", value: "multipla_escolha" },
-                                { label: "Certo / Errado", value: "certo_errado" }
-                            ]} 
+                            options={typeOptions} 
+                            value={values.type}
                             onValueChange={handleFieldChange('type')}
                             isMulti={false}
                         />
@@ -162,6 +253,7 @@ export function QuestionClassificationSection({ onTypeChange, onFieldChange, val
                                 { label: "Não", value: "nao" }
                             ]} 
                             isMulti={false}
+                            value={values.isUnique}
                             onValueChange={handleFieldChange('isUnique')}
                         />
                     </div>

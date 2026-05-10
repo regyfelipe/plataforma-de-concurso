@@ -15,38 +15,67 @@ import {
     DIFICULDADE_MOCK,
     ALTERNATIVAS_MOCK,
     PROFESSOR_INDICA_MOCK,
-    MEUS_CADERNOS_MOCK,
-    CADERNOS_PROFESSOR_MOCK
+    CARGOS_MOCK,
+    CADERNOS_PROFESSOR_MOCK,
+    TOPICOS_MOCK
 } from "@/mocks/filter-options"
 
-export function QuestionFilter() {
+type FilterOption = { label: string; value: string }
+
+type ActiveFilter = {
+    id: string
+    label: string
+    category: string
+}
+
+interface QuestionFilterOptions {
+    disciplinas?: FilterOption[]
+    assuntos?: FilterOption[]
+    topicos?: FilterOption[]
+    bancas?: FilterOption[]
+    concursos?: {
+        id: string
+        name: string
+        sigla?: string
+        ano?: number | string
+        status?: string
+        icon?: "shield" | "scale" | "landmark" | "target"
+    }[]
+    cargos?: FilterOption[]
+    escolaridades?: FilterOption[]
+    anos?: FilterOption[]
+    dificuldades?: FilterOption[]
+}
+
+interface QuestionFilterProps {
+    options?: QuestionFilterOptions
+}
+
+export function QuestionFilter({ options }: QuestionFilterProps) {
     const [isExpanded, setIsExpanded] = React.useState(true)
-    const [selectedCareer, setSelectedCareer] = React.useState('all')
-    const [activeFilters, setActiveFilters] = React.useState([
-        { id: 'banca-fgv', label: 'Banca: FGV', category: 'banca' },
-        { id: 'ano-2024', label: 'Ano: 2024', category: 'ano' },
-    ])
+    const [selectedConcurso, setSelectedConcurso] = React.useState('all')
+    const [activeFilters, setActiveFilters] = React.useState<ActiveFilter[]>([])
 
     const removeFilter = (id: string) => {
-        if (id.startsWith('career-')) setSelectedCareer('all')
+        if (id.startsWith('concurso-')) setSelectedConcurso('all')
         setActiveFilters(prev => prev.filter(f => f.id !== id))
     }
 
-    const handleCareerSelect = (careerId: string, careerName: string) => {
-        setSelectedCareer(careerId)
-        setActiveFilters(prev => prev.filter(f => f.category !== 'career'))
-        if (careerId !== 'all') {
+    const handleConcursoSelect = (concursoId: string, concursoName: string) => {
+        setSelectedConcurso(concursoId)
+        setActiveFilters(prev => prev.filter(f => f.category !== 'concurso'))
+        if (concursoId !== 'all') {
             setActiveFilters(prev => [
                 ...prev, 
-                { id: `career-${careerId}`, label: `Carreira: ${careerName}`, category: 'career' }
+                { id: `concurso-${concursoId}`, label: `Concurso: ${concursoName}`, category: 'concurso' }
             ])
         }
     }
 
     return (
         <div className="w-full flex flex-col gap-6 mb-12 animate-in fade-in duration-700">
-            {/* Seção 1: Carreiras */}
-            <CareerCarousel activeId={selectedCareer} onSelect={handleCareerSelect} />
+            {/* Seção 1: Concursos */}
+            <CareerCarousel activeId={selectedConcurso} concursos={options?.concursos} onSelect={handleConcursoSelect} />
 
             {/* Seção Dashboard Principal */}
             <div className="bg-background/40 backdrop-blur-3xl border border-border/40 rounded-[2rem] shadow-sm overflow-hidden transition-all duration-500 ease-in-out">
@@ -78,7 +107,7 @@ export function QuestionFilter() {
                 <div className={`p-6 space-y-6 transition-all duration-500 ${isExpanded ? "opacity-100 max-h-[2000px]" : "opacity-0 max-h-0 py-0 pointer-events-none"}`}>
                     {/* Linha de Busca e Disciplinas */}
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                        <div className="lg:col-span-4 space-y-1.5">
+                        <div className="lg:col-span-3 space-y-1.5">
                             <div className="h-3" />
                             <div className="relative group">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40 group-focus-within:text-primary transition-colors" />
@@ -88,22 +117,25 @@ export function QuestionFilter() {
                                 />
                             </div>
                         </div>
-                        <div className="lg:col-span-4">
-                            <FilterSelect label="Disciplinas" placeholder="Todas as matérias" options={DISCIPLINAS_MOCK} />
+                        <div className="lg:col-span-3">
+                            <FilterSelect label="Disciplinas" placeholder="Todas as matérias" options={options?.disciplinas ?? DISCIPLINAS_MOCK} />
                         </div>
-                        <div className="lg:col-span-4">
-                            <FilterSelect label="Assuntos" placeholder="Selecione o tema" options={ASSUNTOS_MOCK} />
+                        <div className="lg:col-span-3">
+                            <FilterSelect label="Assuntos" placeholder="Selecione o assunto" options={options?.assuntos ?? ASSUNTOS_MOCK} />
+                        </div>
+                        <div className="lg:col-span-3">
+                            <FilterSelect label="Tópicos" placeholder="Selecione o tópico" options={options?.topicos ?? TOPICOS_MOCK ?? []} />
                         </div>
                     </div>
 
                     {/* Grid secundário de filtros */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-4 border-t border-border/10">
-                        <FilterSelect label="Bancas" placeholder="FGV, Cebraspe..." options={BANCAS_MOCK} />
-                        <FilterSelect label="Meus Cadernos" placeholder="Selecione um caderno" options={MEUS_CADERNOS_MOCK} />
-                        <FilterSelect label="Escolaridade" placeholder="Nível" options={ESCOLARIDADE_MOCK} />
-                        <FilterSelect label="Ano" placeholder="2024" options={ANOS_MOCK} />
+                        <FilterSelect label="Bancas" placeholder="FGV, Cebraspe..." options={options?.bancas ?? BANCAS_MOCK} />
+                        <FilterSelect label="Cargo" placeholder="Selecione o cargo" options={options?.cargos ?? CARGOS_MOCK} />
+                        <FilterSelect label="Escolaridade" placeholder="Nível" options={options?.escolaridades ?? ESCOLARIDADE_MOCK} />
+                        <FilterSelect label="Ano" placeholder="2024" options={options?.anos ?? ANOS_MOCK} />
                         <FilterSelect label="Número de Alternativas" placeholder="4 ou 5" options={ALTERNATIVAS_MOCK} />
-                        <FilterSelect label="Nível de Dificuldade" placeholder="Todos" options={DIFICULDADE_MOCK} />
+                        <FilterSelect label="Nível de Dificuldade" placeholder="Todos" options={options?.dificuldades ?? DIFICULDADE_MOCK} />
                         <FilterSelect label="Professor Indica" placeholder="Dicas" options={PROFESSOR_INDICA_MOCK} />
                         <FilterSelect label="Cadernos do Professor" placeholder="Recomendados" options={CADERNOS_PROFESSOR_MOCK} />
                     </div>
@@ -141,7 +173,7 @@ export function QuestionFilter() {
                             <button 
                                 onClick={() => {
                                     setActiveFilters([])
-                                    setSelectedCareer('all')
+                                    setSelectedConcurso('all')
                                 }}
                                 className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 hover:text-red-500 transition-colors"
                             >

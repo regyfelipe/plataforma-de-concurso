@@ -26,80 +26,8 @@ export function NotebookAccessSettings() {
                 </div>
             </CardHeader>
             <CardContent className="space-y-8">
-                {/* Opções de Visibilidade */}
-                <div className="space-y-4">
-                    <Label className="text-xs font-semibold">Status de Publicação</Label>
-                    <RadioGroup defaultValue="draft" className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Label
-                            htmlFor="public"
-                            className="flex items-center justify-between p-4 rounded-lg border bg-muted/30 cursor-pointer hover:bg-muted transition-colors [&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/5"
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                                    <Globe className="w-4 h-4" />
-                                </div>
-                                <div className="space-y-0.5">
-                                    <p className="text-sm font-semibold">Público</p>
-                                    <p className="text-[11px] text-muted-foreground">Livre para todos os usuários.</p>
-                                </div>
-                            </div>
-                            <RadioGroupItem value="public" id="public" className="sr-only" />
-                        </Label>
-
-                        <Label
-                            htmlFor="premium"
-                            className="flex items-center justify-between p-4 rounded-lg border bg-muted/30 cursor-pointer hover:bg-muted transition-colors [&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/5"
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded bg-amber-500/10 flex items-center justify-center text-amber-500">
-                                    <Star className="w-4 h-4" />
-                                </div>
-                                <div className="space-y-0.5">
-                                    <p className="text-sm font-semibold">Premium</p>
-                                    <p className="text-[11px] text-muted-foreground">Apenas para alunos pagantes.</p>
-                                </div>
-                            </div>
-                            <RadioGroupItem value="premium" id="premium" className="sr-only" />
-                        </Label>
-
-                        <Label
-                            htmlFor="private"
-                            className="flex items-center justify-between p-4 rounded-lg border bg-muted/30 cursor-pointer hover:bg-muted transition-colors [&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/5"
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded bg-muted flex items-center justify-center text-muted-foreground">
-                                    <Eye className="w-4 h-4" />
-                                </div>
-                                <div className="space-y-0.5">
-                                    <p className="text-sm font-semibold">Privado</p>
-                                    <p className="text-[11px] text-muted-foreground">Apenas você ou turmas convidadas.</p>
-                                </div>
-                            </div>
-                            <RadioGroupItem value="private" id="private" className="sr-only" />
-                        </Label>
-
-                        <Label
-                            htmlFor="draft"
-                            className="flex items-center justify-between p-4 rounded-lg border bg-muted/30 cursor-pointer hover:bg-muted transition-colors [&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/5"
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded bg-muted flex items-center justify-center text-muted-foreground">
-                                    <FileEdit className="w-4 h-4" />
-                                </div>
-                                <div className="space-y-0.5">
-                                    <p className="text-sm font-semibold">Rascunho</p>
-                                    <p className="text-[11px] text-muted-foreground">Em desenvolvimento (oculto).</p>
-                                </div>
-                            </div>
-                            <RadioGroupItem value="draft" id="draft" className="sr-only" />
-                        </Label>
-                    </RadioGroup>
-                </div>
-
-                <Separator />
-
                 {/* Toggles de Funcionalidades */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 pt-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded bg-primary/5 flex items-center justify-center text-primary/60">
