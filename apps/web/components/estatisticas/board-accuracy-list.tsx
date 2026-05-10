@@ -1,45 +1,41 @@
 "use client"
 
 import { Building2, ChevronRight } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card"
+import { Progress } from "@workspace/ui/components/progress"
 
 interface BoardAccuracyListProps {
-    data: {
-        board: string
-        accuracy: number
-    }[]
+    data: { board: string; accuracy: number }[]
 }
 
 export function BoardAccuracyList({ data }: BoardAccuracyListProps) {
     return (
-        <div className="bg-card dark:bg-muted/10 border border-border/40 rounded-[2rem] p-8 space-y-6 shadow-sm">
-            <div className="flex items-center justify-between">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40">Performance por Banca</p>
-                <Building2 className="w-4 h-4 text-muted-foreground/20" />
-            </div>
-
-            <div className="space-y-4">
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Performance por Banca</CardTitle>
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent className="space-y-4">
                 {data.map((item) => (
-                    <div key={item.board} className="flex items-center justify-between p-4 bg-muted/5 border border-border/20 rounded-2xl hover:border-primary/30 transition-all cursor-pointer group">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-background border border-border/40 flex items-center justify-center font-black text-xs text-primary group-hover:scale-105 transition-transform">
-                                {item.board.substring(0, 3).toUpperCase()}
+                    <div key={item.board} className="space-y-1.5 cursor-pointer group">
+                        <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-2 font-medium">
+                                <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded">
+                                    {item.board.substring(0, 3).toUpperCase()}
+                                </span>
+                                {item.board}
                             </div>
-                            <div>
-                                <h4 className="text-sm font-black text-foreground">{item.board}</h4>
-                                <p className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest">Baseado em +100 questões</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-6">
-                            <div className="text-right">
-                                <span className={`text-lg font-black ${item.accuracy >= 80 ? 'text-emerald-500' : 'text-primary'}`}>
+                            <div className="flex items-center gap-2">
+                                <span className={`font-semibold ${item.accuracy >= 80 ? "text-emerald-500" : "text-foreground"}`}>
                                     {item.accuracy}%
                                 </span>
+                                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
                             </div>
-                            <ChevronRight className="w-4 h-4 text-muted-foreground/20 group-hover:text-primary transition-colors" />
                         </div>
+                        <Progress value={item.accuracy} className="h-1.5" />
                     </div>
                 ))}
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     )
 }

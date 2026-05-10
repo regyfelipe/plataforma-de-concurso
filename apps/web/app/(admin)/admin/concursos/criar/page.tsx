@@ -1,163 +1,24 @@
-"use client"
+import { prisma } from "@workspace/database"
+import { CreateConcursoForm } from "./create-concurso-form"
 
-import * as React from "react"
-import { ChevronLeft, Save, X, ClipboardList, Landmark, Briefcase, School, Calendar, Power } from "lucide-react"
-import Link from "next/link"
-import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
-import { Label } from "@workspace/ui/components/label"
-import { Switch } from "@workspace/ui/components/switch"
-import { 
-    Select, 
-    SelectContent, 
-    SelectItem, 
-    SelectTrigger, 
-    SelectValue 
-} from "@workspace/ui/components/select"
-import { BANCAS_MOCK, CARREIRAS_MOCK, EDUCACIONAL_MOCK } from "@/data/mocks/admin"
+export default async function CriarConcursoPage() {
+    const [bancas, carreiras, niveis] = await Promise.all([
+        prisma.banca.findMany({
+            where: { ativo: true },
+            orderBy: { nome: "asc" },
+            select: { id: true, nome: true, sigla: true },
+        }),
+        prisma.carreira.findMany({
+            where: { ativo: true },
+            orderBy: { nome: "asc" },
+            select: { id: true, nome: true },
+        }),
+        prisma.nivelEducacional.findMany({
+            where: { ativo: true },
+            orderBy: { nome: "asc" },
+            select: { id: true, nome: true },
+        }),
+    ])
 
-export default function CriarConcursoPage() {
-    return (
-        <div className="flex-1 space-y-8 p-8 pt-6 animate-in fade-in slide-in-from-bottom-4 duration-700 bg-background min-h-[100vh] rounded-xl md:min-h-min mx-auto w-full max-w-4xl">
-            
-            {/* Header de Navegação */}
-            <div className="flex flex-col gap-6">
-                <Link href="/admin/concursos" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors w-fit">
-                    <ChevronLeft className="w-4 h-4" />
-                    Voltar para Lista
-                </Link>
-
-                <div className="flex flex-wrap items-end justify-between gap-6">
-                    <div className="space-y-1">
-                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-primary">Gestão de Certames</p>
-                        <h1 className="text-3xl font-black tracking-tighter text-foreground">
-                            Criar Novo Concurso
-                        </h1>
-                    </div>
-                </div>
-            </div>
-
-            {/* Formulário Principal */}
-            <div className="bg-card dark:bg-muted/10 border border-border/40 rounded-[2.5rem] p-10 space-y-10 shadow-sm">
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                    {/* Coluna de Info (1/3) */}
-                    <div className="space-y-4">
-                        <h3 className="text-sm font-black uppercase tracking-widest text-foreground">Dados do Certame</h3>
-                        <p className="text-[11px] font-medium text-muted-foreground/60 leading-relaxed">
-                            O concurso é a entidade principal que agrupa as questões por ano e instituição. Certifique-se de selecionar a banca e carreira corretas.
-                        </p>
-                    </div>
-
-                    {/* Coluna de Campos (2/3) */}
-                    <div className="md:col-span-2 space-y-6">
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1 flex items-center gap-2">
-                                <ClipboardList className="w-3 h-3" />
-                                Nome do Concurso
-                            </Label>
-                            <Input 
-                                placeholder="Ex: Polícia Rodoviária Federal 2024" 
-                                className="h-12 px-5 bg-muted/10 border-border/40 rounded-xl focus-visible:ring-primary/20 font-medium"
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1 flex items-center gap-2">
-                                    <Landmark className="w-3 h-3" />
-                                    Banca Examinadora
-                                </Label>
-                                <Select>
-                                    <SelectTrigger className="w-full h-12 bg-muted/10 border-border/40 rounded-xl focus:ring-primary/20">
-                                        <SelectValue placeholder="Selecione a Banca" />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-xl border-border/40 shadow-2xl">
-                                        {BANCAS_MOCK.map((b) => (
-                                            <SelectItem key={b.id} value={b.sigla}>{b.sigla} - {b.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1 flex items-center gap-2">
-                                    <Calendar className="w-3 h-3" />
-                                    Ano do Certame
-                                </Label>
-                                <Input 
-                                    type="number"
-                                    placeholder="2024" 
-                                    className="h-12 px-5 bg-muted/10 border-border/40 rounded-xl focus-visible:ring-primary/20 font-medium"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1 flex items-center gap-2">
-                                    <Briefcase className="w-3 h-3" />
-                                    Carreira
-                                </Label>
-                                <Select>
-                                    <SelectTrigger className="w-full h-12 bg-muted/10 border-border/40 rounded-xl focus:ring-primary/20">
-                                        <SelectValue placeholder="Selecione a Carreira" />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-xl border-border/40 shadow-2xl">
-                                        {CARREIRAS_MOCK.map((c) => (
-                                            <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1 flex items-center gap-2">
-                                    <School className="w-3 h-3" />
-                                    Escolaridade
-                                </Label>
-                                <Select>
-                                    <SelectTrigger className="w-full h-12 bg-muted/10 border-border/40 rounded-xl focus:ring-primary/20">
-                                        <SelectValue placeholder="Selecione o Nível" />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-xl border-border/40 shadow-2xl">
-                                        {EDUCACIONAL_MOCK.map((e) => (
-                                            <SelectItem key={e.id} value={e.name}>{e.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-
-                        <div className="pt-6 border-t border-border/10">
-                            <div className="flex items-center justify-between p-4 bg-muted/5 rounded-2xl border border-border/20">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                                        <Power className="w-5 h-5" />
-                                    </div>
-                                    <div className="space-y-0.5">
-                                        <p className="text-xs font-black text-foreground">Status do Concurso</p>
-                                        <p className="text-[10px] font-medium text-muted-foreground/60">Ative para permitir o vínculo de questões.</p>
-                                    </div>
-                                </div>
-                                <Switch defaultChecked />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Ações do Formulário */}
-                <div className="flex items-center justify-end gap-4 pt-6 border-t border-border/10">
-                    <Link href="/admin/concursos">
-                        <Button variant="ghost" className="h-12 px-8 rounded-xl text-[10px] font-black uppercase tracking-widest gap-2">
-                            <X className="w-4 h-4" />
-                            Cancelar
-                        </Button>
-                    </Link>
-                    <Button className="h-12 px-10 rounded-xl bg-primary text-primary-foreground font-black text-[10px] uppercase tracking-widest hover:opacity-90 shadow-lg shadow-primary/20 gap-2 transition-all">
-                        <Save className="w-4 h-4" />
-                        Salvar Concurso
-                    </Button>
-                </div>
-            </div>
-        </div>
-    )
+    return <CreateConcursoForm bancas={bancas} carreiras={carreiras} niveis={niveis} />
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ChevronLeft, Save, X, Library, BookOpen, AlignLeft, Power, User } from "lucide-react"
+import { ChevronLeft, Save, Library, BookOpen, AlignLeft, Power, User } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -17,6 +17,8 @@ import {
 } from "@workspace/ui/components/select"
 import { useParams } from "next/navigation"
 import { CADERNOS_MOCK, DISCIPLINAS_MOCK } from "@/data/mocks/admin"
+import { Card, CardContent } from "@workspace/ui/components/card"
+import { Separator } from "@workspace/ui/components/separator"
 
 export default function EditarCadernoAdminPage() {
     const params = useParams()
@@ -31,19 +33,16 @@ export default function EditarCadernoAdminPage() {
     }
 
     return (
-        <div className="flex-1 space-y-8 p-8 pt-6 animate-in fade-in slide-in-from-bottom-4 duration-700 bg-background min-h-[100vh] rounded-xl md:min-h-min mx-auto w-full max-w-4xl">
+        <div className="flex-1 space-y-6 p-8 pt-6 bg-background">
             
-            {/* Header de Navegação */}
-            <div className="flex flex-col gap-6">
-                <Link href="/admin/cadernos" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors w-fit">
-                    <ChevronLeft className="w-4 h-4" />
-                    Voltar para Lista
-                </Link>
+            {/* Header Master */}
+            <div className="flex flex-col gap-4">
+                
 
-                <div className="flex flex-wrap items-end justify-between gap-6">
+                <div className="flex flex-wrap items-center justify-between gap-4">
                     <div className="space-y-1">
-                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-primary">Materiais Oficiais</p>
-                        <h1 className="text-3xl font-black tracking-tighter text-foreground">
+                        <p className="text-xs font-medium text-primary">Edição de Material</p>
+                        <h1 className="text-2xl font-bold tracking-tight text-foreground">
                             Editar Caderno Oficial
                         </h1>
                     </div>
@@ -51,102 +50,105 @@ export default function EditarCadernoAdminPage() {
             </div>
 
             {/* Formulário Principal */}
-            <div className="bg-card dark:bg-muted/10 border border-border/40 rounded-[2.5rem] p-10 space-y-10 shadow-sm">
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                    <div className="space-y-4">
-                        <h3 className="text-sm font-black uppercase tracking-widest text-foreground">Ajuste de Conteúdo</h3>
-                        <p className="text-[11px] font-medium text-muted-foreground/60 leading-relaxed">
-                            Alterar o título ou a descrição ajuda a manter o material atualizado para os alunos. Você também pode gerenciar as questões vinculadas a este caderno.
-                        </p>
-                    </div>
-
-                    <div className="md:col-span-2 space-y-6">
+            <Card>
+                <CardContent className="p-8 space-y-10">
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
                         <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1 flex items-center gap-2">
-                                <Library className="w-3 h-3" />
-                                Título do Caderno
-                            </Label>
-                            <Input 
-                                value={nome}
-                                onChange={(e) => setNome(e.target.value)}
-                                placeholder="Ex: Simulado PRF 2024" 
-                                className="h-12 px-5 bg-muted/10 border-border/40 rounded-xl focus-visible:ring-primary/20 font-medium"
-                            />
+                            <h3 className="text-sm font-semibold text-foreground">Informações Gerais</h3>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                Alterar o título ou a disciplina ajuda na organização do catálogo oficial.
+                            </p>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="md:col-span-2 space-y-6">
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1 flex items-center gap-2">
-                                    <BookOpen className="w-3 h-3" />
-                                    Disciplina Foco
-                                </Label>
-                                <Select defaultValue={caderno.disciplina === 'Múltiplas' ? 'multiplas' : caderno.disciplina}>
-                                    <SelectTrigger className="w-full h-12 bg-muted/10 border-border/40 rounded-xl focus:ring-primary/20">
-                                        <SelectValue placeholder="Selecione a Matéria" />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-xl border-border/40 shadow-2xl">
-                                        <SelectItem value="multiplas">Múltiplas Disciplinas</SelectItem>
-                                        {DISCIPLINAS_MOCK.map((d) => (
-                                            <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1 flex items-center gap-2">
-                                    <User className="w-3 h-3" />
-                                    Autor / Professor
+                                <Label className="text-xs font-semibold flex items-center gap-2">
+                                    <Library className="w-3.5 h-3.5 text-muted-foreground" />
+                                    Título do Caderno
                                 </Label>
                                 <Input 
-                                    defaultValue={caderno.professor}
-                                    className="h-12 px-5 bg-muted/20 border-border/40 rounded-xl font-medium opacity-70"
-                                    readOnly
+                                    value={nome}
+                                    onChange={(e) => setNome(e.target.value)}
+                                    placeholder="Ex: Simulado PRF 2024" 
+                                    className="h-10 px-4"
                                 />
                             </div>
-                        </div>
 
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1 flex items-center gap-2">
-                                <AlignLeft className="w-3 h-3" />
-                                Descrição do Caderno
-                            </Label>
-                            <Textarea 
-                                placeholder="Descreva os objetivos deste material..." 
-                                className="bg-muted/10 border-border/40 rounded-xl p-5 min-h-[120px] resize-none focus-visible:ring-primary/20 font-medium"
-                            />
-                        </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-semibold flex items-center gap-2">
+                                        <BookOpen className="w-3.5 h-3.5 text-muted-foreground" />
+                                        Disciplina Foco
+                                    </Label>
+                                    <Select defaultValue={caderno.disciplina === 'Múltiplas' ? 'multiplas' : caderno.disciplina}>
+                                        <SelectTrigger className="h-10">
+                                            <SelectValue placeholder="Selecione a Matéria" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="multiplas">Múltiplas Disciplinas</SelectItem>
+                                            {DISCIPLINAS_MOCK.map((d) => (
+                                                <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-semibold flex items-center gap-2">
+                                        <User className="w-3.5 h-3.5 text-muted-foreground" />
+                                        Autor Responsável
+                                    </Label>
+                                    <Input 
+                                        defaultValue={caderno.professor}
+                                        className="h-10 px-4 bg-muted/50"
+                                        readOnly
+                                    />
+                                </div>
+                            </div>
 
-                        <div className="pt-6 border-t border-border/10">
-                            <div className="flex items-center justify-between p-4 bg-muted/5 rounded-2xl border border-border/20">
+                            <div className="space-y-2">
+                                <Label className="text-xs font-semibold flex items-center gap-2">
+                                    <AlignLeft className="w-3.5 h-3.5 text-muted-foreground" />
+                                    Descrição do Caderno
+                                </Label>
+                                <Textarea 
+                                    placeholder="Descreva os objetivos deste material para os alunos..." 
+                                    className="min-h-[120px] resize-none"
+                                />
+                            </div>
+
+                            <Separator />
+
+                            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-600">
-                                        <Power className="w-5 h-5" />
+                                    <div className="w-9 h-9 rounded bg-emerald-500/10 flex items-center justify-center text-emerald-600 border border-emerald-500/20">
+                                        <Power className="w-4 h-4" />
                                     </div>
                                     <div className="space-y-0.5">
-                                        <p className="text-xs font-black text-foreground">Status de Publicação</p>
-                                        <p className="text-[10px] font-medium text-muted-foreground/60">Define se o caderno está visível para os alunos no portal.</p>
+                                        <p className="text-sm font-semibold text-foreground">Status de Publicação</p>
+                                        <p className="text-[11px] text-muted-foreground">Define se o caderno está visível no portal do aluno.</p>
                                     </div>
                                 </div>
                                 <Switch defaultChecked={caderno.status === 'published'} />
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="flex items-center justify-end gap-4 pt-6 border-t border-border/10">
-                    <Link href="/admin/cadernos">
-                        <Button variant="ghost" className="h-12 px-8 rounded-xl text-[10px] font-black uppercase tracking-widest gap-2">
-                            <X className="w-4 h-4" />
-                            Cancelar
+                    <Separator />
+
+                    <div className="flex items-center justify-end gap-3">
+                        <Link href="/admin/cadernos">
+                            <Button variant="ghost" className="h-10 px-6 font-semibold">
+                                Cancelar
+                            </Button>
+                        </Link>
+                        <Button className="h-10 px-8 font-semibold gap-2">
+                            <Save className="w-4 h-4" />
+                            Salvar Alterações
                         </Button>
-                    </Link>
-                    <Button className="h-12 px-10 rounded-xl bg-primary text-primary-foreground font-black text-[10px] uppercase tracking-widest hover:opacity-90 shadow-lg shadow-primary/20 gap-2 transition-all">
-                        <Save className="w-4 h-4" />
-                        Salvar Alterações
-                    </Button>
-                </div>
-            </div>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     )
 }

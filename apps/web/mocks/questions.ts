@@ -2,30 +2,18 @@ export const MOCK_QUESTIONS = [
   
   {
   id: "question-1",
-
   code: "QST-000002",
-
   type: "multiple_choice",
-
   discipline: "Língua Portuguesa",
-
   subject: "Sintaxe",
-
   topic: "Concordância Verbal",
-
   board: "FCC",
-
   institution: "TRT-15",
-
   career: "Analista Judiciário",
-
   educationLevel: "Ensino Superior",
-
   year: 2023,
-
   questionText:
     "Assinale a alternativa em que a concordância verbal está de acordo com a norma-padrão da Língua Portuguesa:",
-
   supportText: `
 A concordância verbal estabelece a relação entre o verbo e o sujeito da oração. 
 Na norma-padrão da Língua Portuguesa, o verbo deve concordar em número e pessoa com o núcleo do sujeito.
@@ -92,15 +80,10 @@ Leia atentamente cada alternativa e identifique a única frase que respeita inte
   `,
 
   difficulty: "medio",
-
   isUnique: true,
-
   access: "free",
-
   visibility: "publica",
-
   status: "published",
-
   resolution: `
 A questão exige conhecimento das regras de concordância verbal previstas na norma-padrão.
 
@@ -209,48 +192,34 @@ A única alternativa plenamente correta é a letra B.
 
   stats: {
     totalAnswers: 892,
-
     correctRate: 58,
-
     averageTimeSeconds: 168,
-
     mostSelectedWrongAlternative: "A"
   },
 
   userState: {
     isFavorite: true,
-
     isInNotebook: false,
-
     hasAnswered: true,
-
     selectedAlternative: "A",
-
     isCorrect: false
   },
 
   commentsCount: 18,
-
   reportsCount: 0,
-
   hasVideoLesson: true,
-
   createdAt: new Date().toISOString(),
-
   updatedAt: new Date().toISOString(),
 
   author: {
     id: "user-2",
-
     name: "Profa. Maria Helena"
   },
 
   reviewer: {
     id: "reviewer-2",
-
     name: "Prof. Ricardo Alves"
   },
-
   reviewedAt: new Date().toISOString()
 }
 

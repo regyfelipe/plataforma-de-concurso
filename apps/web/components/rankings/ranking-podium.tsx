@@ -1,56 +1,68 @@
 "use client"
 
 import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
+import { Card, CardContent } from "@workspace/ui/components/card"
+import { Separator } from "@workspace/ui/components/separator"
 
 interface RankingPodiumProps {
     data: any[]
 }
 
+const MEDAL_STYLES: Record<number, string> = {
+    1: "bg-yellow-400 text-yellow-900",
+    2: "bg-slate-300 text-slate-900",
+    3: "bg-orange-400 text-orange-900",
+}
+
 export function RankingPodium({ data }: RankingPodiumProps) {
-    if (!data || data.length < 3) return null;
+    if (!data || data.length < 3) return null
+
+    // Render order: 2nd, 1st, 3rd
+    const ordered = [data[1], data[0], data[2]]
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 items-end">
-            {/* Estrutura 2-1-3 */}
-            {[data[1], data[0], data[2]].map((user: any, i: number) => {
-                const isFirst = user === data[0];
-                const isSecond = user === data[1];
-
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            {ordered.map((user: any) => {
+                const isFirst = user === data[0]
+                const isSecond = user === data[1]
                 return (
-                    <div 
-                        key={user.rank} 
-                        className={`relative group bg-card dark:bg-muted/10 border border-border/40 rounded-[2rem] flex flex-col items-center text-center space-y-4 hover:border-primary/30 transition-all ${
-                            isFirst ? 'py-12 px-8 border-primary/20 shadow-lg shadow-primary/5 z-10' : 'py-10 px-8'
-                        } ${isSecond ? 'md:order-1' : isFirst ? 'md:order-2' : 'md:order-3'}`}
+                    <Card
+                        key={user.rank}
+                        className={`flex flex-col items-center text-center
+                            ${isFirst ? "md:order-2 border-primary/30" : isSecond ? "md:order-1" : "md:order-3"}
+                        `}
                     >
-                        <div className={`absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border border-border/40 shadow-sm ${
-                            isFirst ? 'bg-yellow-500 text-black border-yellow-400' : 
-                            isSecond ? 'bg-slate-300 text-black border-slate-200' : 
-                            'bg-orange-400 text-black border-orange-300'
-                        }`}>
-                            {user.rank}º Lugar
-                        </div>
+                        <CardContent className={`flex flex-col items-center gap-4 ${isFirst ? "pt-8 pb-6 px-6" : "pt-6 pb-4 px-6"}`}>
+                            {/* Medal badge */}
+                            <span className={`px-3 py-0.5 rounded-full text-xs font-semibold ${MEDAL_STYLES[user.rank]}`}>
+                                {user.rank}º Lugar
+                            </span>
 
-                        <Avatar className={`${isFirst ? 'w-24 h-24' : 'w-20 h-20'} border-2 border-border/40 group-hover:border-primary transition-all`}>
-                            <AvatarFallback className="text-xl font-black">{user.avatar}</AvatarFallback>
-                        </Avatar>
+                            <Avatar className={isFirst ? "h-20 w-20" : "h-16 w-16"}>
+                                <AvatarFallback className={isFirst ? "text-xl" : "text-base"}>
+                                    {user.avatar}
+                                </AvatarFallback>
+                            </Avatar>
 
-                        <div className="space-y-1">
-                            <h3 className={`${isFirst ? 'text-xl' : 'text-lg'} font-black tracking-tighter text-foreground`}>{user.name}</h3>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-primary">{user.points} pts</p>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4 w-full pt-4 border-t border-border/20">
-                            <div className="text-center">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">Precisão</p>
-                                <p className="text-sm font-black text-foreground">{user.precision}%</p>
+                            <div>
+                                <p className={`font-semibold ${isFirst ? "text-lg" : "text-base"}`}>{user.name}</p>
+                                <p className="text-sm font-medium text-primary">{user.points.toLocaleString()} pts</p>
                             </div>
-                            <div className="text-center">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">Resolvidas</p>
-                                <p className="text-sm font-black text-foreground">{user.solved}</p>
+
+                            <Separator />
+
+                            <div className="grid grid-cols-2 gap-6 w-full">
+                                <div className="text-center">
+                                    <p className="text-xs text-muted-foreground">Precisão</p>
+                                    <p className="text-sm font-semibold">{user.precision}%</p>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-xs text-muted-foreground">Resolvidas</p>
+                                    <p className="text-sm font-semibold">{user.solved}</p>
+                                </div>
                             </div>
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
                 )
             })}
         </div>

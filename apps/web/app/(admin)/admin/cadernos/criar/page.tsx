@@ -4,12 +4,16 @@ import * as React from "react"
 import { ChevronLeft, Save, X, Eye, CheckCircle2, ArrowRight, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@workspace/ui/components/button"
+import { Badge } from "@workspace/ui/components/badge"
 
 // Importação dos sub-componentes
 import { NotebookBasicInfo } from "@/components/admin/cadernos/notebook-basic-info"
 import { NotebookAccessSettings } from "@/components/admin/cadernos/notebook-access-settings"
 import { NotebookQuestionPicker } from "@/components/admin/cadernos/notebook-question-picker"
 import { NotebookResolutionSettings } from "@/components/admin/cadernos/notebook-resolution-settings"
+
+import { Card, CardContent } from "@workspace/ui/components/card"
+import { Separator } from "@workspace/ui/components/separator"
 
 export default function CriarCadernoStepsPage() {
     const [step, setStep] = React.useState(1)
@@ -19,26 +23,23 @@ export default function CriarCadernoStepsPage() {
     const prevStep = () => setStep(prev => Math.max(prev - 1, 1))
 
     return (
-        <div className="relative min-h-screen bg-background pb-24">
+        <div className="relative min-h-screen bg-background pb-24 max-w-7xl mx-auto w-full">
             {/* Header Compacto */}
-            <div className="p-6 max-w-6xl mx-auto space-y-4">
-                <Link href="/admin/cadernos" className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-primary transition-colors w-fit">
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                    Voltar para Cadernos
-                </Link>
-
+            <div className="p-8 pt-6 space-y-4">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="space-y-0.5">
+                    <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-bold uppercase bg-primary/10 text-primary px-2 py-0.5 rounded">Passo {step}/{totalSteps}</span>
-                            <h1 className="text-xl font-bold tracking-tight text-foreground">
+                            <Badge variant="secondary" className="px-2 py-0 h-5 text-[10px] font-semibold">
+                                Passo {step}/{totalSteps}
+                            </Badge>
+                            <h1 className="text-2xl font-bold tracking-tight text-foreground">
                                 {step === 1 && "Informações Básicas"}
                                 {step === 2 && "Configurações de Acesso"}
                                 {step === 3 && "Seleção de Questões"}
                                 {step === 4 && "Regras de Resolução"}
                             </h1>
                         </div>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-sm text-muted-foreground">
                             {step === 1 && "Defina a identidade do novo caderno oficial."}
                             {step === 2 && "Configure visibilidade e engajamento."}
                             {step === 3 && "Curadoria técnica do banco de questões."}
@@ -47,19 +48,19 @@ export default function CriarCadernoStepsPage() {
                     </div>
 
                     {/* Progress Bar Compacta */}
-                    <div className="flex gap-1">
+                    <div className="flex gap-1.5">
                         {[1, 2, 3, 4].map((s) => (
                             <div 
                                 key={s} 
-                                className={`h-1 rounded-full transition-all duration-300 ${s <= step ? 'w-8 bg-primary' : 'w-4 bg-muted'}`} 
+                                className={`h-1.5 rounded-full transition-all duration-300 ${s <= step ? 'w-10 bg-primary' : 'w-4 bg-muted'}`} 
                             />
                         ))}
                     </div>
                 </div>
             </div>
 
-            {/* Conteúdo em Card Padrão */}
-            <div className="max-w-6xl mx-auto px-6">
+            {/* Conteúdo */}
+            <div className="px-8">
                 {step === 1 && <NotebookBasicInfo />}
                 {step === 2 && <NotebookAccessSettings />}
                 {step === 3 && <NotebookQuestionPicker />}
@@ -67,26 +68,26 @@ export default function CriarCadernoStepsPage() {
             </div>
 
             {/* Footer Padronizado */}
-            <div className="fixed bottom-0 left-0 md:left-64 right-0 z-50 border-t border-border/40 bg-background/95 backdrop-blur-sm">
-                <div className="max-w-6xl mx-auto p-4 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-2">
+            <div className="fixed bottom-0 left-0 md:left-66 right-0 z-50  bg-background  shadow-2xl">
+                <div className="max-w-7xl mx-auto p-4 flex items-center justify-between gap-4 px-8">
+                    <div className="flex items-center gap-3">
                         <Button 
                             variant="ghost" 
                             size="sm"
                             onClick={prevStep}
                             disabled={step === 1}
-                            className="text-[10px] font-bold uppercase tracking-wider gap-2 h-9"
+                            className="gap-2 h-9 text-xs font-semibold"
                         >
-                            <ArrowLeft className="w-3.5 h-3.5" />
+                            <ArrowLeft className="w-4 h-4" />
                             Anterior
                         </Button>
-                        <div className="w-[1px] h-4 bg-border/40" />
-                        <span className="text-[10px] font-bold text-muted-foreground uppercase">{Math.round((step / totalSteps) * 100)}%</span>
+                        <Separator orientation="vertical" className="h-4" />
+                        <span className="text-xs font-bold text-muted-foreground">{Math.round((step / totalSteps) * 100)}%</span>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" className="h-9 text-[10px] font-bold uppercase tracking-wider gap-2">
-                            <Save className="w-3.5 h-3.5" />
+                    <div className="flex items-center gap-3">
+                        <Button variant="outline" size="sm" className="h-9 gap-2 text-xs font-semibold">
+                            <Save className="w-4 h-4" />
                             Rascunho
                         </Button>
 
@@ -94,22 +95,22 @@ export default function CriarCadernoStepsPage() {
                             <Button 
                                 size="sm"
                                 onClick={nextStep}
-                                className="h-9 px-6 bg-primary text-primary-foreground font-bold text-[10px] uppercase tracking-wider gap-2"
+                                className="h-9 px-6 gap-2 text-xs font-semibold"
                             >
                                 Próximo
-                                <ArrowRight className="w-3.5 h-3.5" />
+                                <ArrowRight className="w-4 h-4" />
                             </Button>
                         ) : (
                             <Button 
                                 size="sm"
-                                className="h-9 px-6 bg-emerald-600 text-white font-bold text-[10px] uppercase tracking-wider gap-2 hover:bg-emerald-700"
+                                className="h-9 px-6 bg-emerald-600 text-white hover:bg-emerald-700 gap-2 text-xs font-semibold"
                             >
-                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <CheckCircle2 className="w-4 h-4" />
                                 Finalizar
                             </Button>
                         )}
 
-                        <div className="w-[1px] h-4 bg-border/40 mx-1" />
+                        <Separator orientation="vertical" className="h-4" />
 
                         <Button variant="ghost" size="icon" className="h-9 w-9">
                             <Eye className="w-4 h-4 text-muted-foreground hover:text-primary" />

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Plus, ChevronLeft, ChevronRight, LayoutList, ListOrdered } from "lucide-react"
+import { Progress } from "@workspace/ui/components/progress"
 import { Button } from "@workspace/ui/components/button"
 import { QuestionFormActions } from "./question-form-actions"
 import { QuestionClassificationSection } from "./question-classification-section"
@@ -156,9 +157,10 @@ export function CreateQuestionForm() {
                                 variant="outline" 
                                 size="sm" 
                                 onClick={handleAddAlternative}
-                                className="h-8 rounded-full px-4 text-[10px] font-black uppercase border-dashed hover:border-primary/50 hover:bg-primary/5 transition-all"
+                               
+                                className="border-dashed"
                             >
-                                <Plus className="w-3 h-3 mr-2" /> Adicionar Alternativa
+                                <Plus className="mr-2 h-3 w-3" /> Adicionar Alternativa
                             </Button>
                         </div>
                     )}
@@ -192,35 +194,28 @@ export function CreateQuestionForm() {
 
             <div className="max-w-6xl mx-auto pb-20 px-4">
                 {/* Seletor de Modo e Progresso */}
-                <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4 pt-4 border-t border-border/10">
-                    <div className="flex items-center gap-2 p-1 bg-muted/10 rounded-xl border border-border/50">
-                        <Button 
-                            variant={!isWizardMode ? "secondary" : "ghost"} 
+                <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4 pt-4 border-t">
+                    <div className="flex items-center gap-1">
+                        <Button
+                            variant={!isWizardMode ? "secondary" : "ghost"}
                             size="sm"
                             onClick={() => setIsWizardMode(false)}
-                            className="h-8 rounded-lg text-[10px] font-black uppercase tracking-widest"
                         >
-                            <LayoutList className="w-3 h-3 mr-2" /> Visão Geral
+                            <LayoutList className="mr-2 h-3.5 w-3.5" /> Visão Geral
                         </Button>
-                        <Button 
-                            variant={isWizardMode ? "secondary" : "ghost"} 
+                        <Button
+                            variant={isWizardMode ? "secondary" : "ghost"}
                             size="sm"
                             onClick={() => setIsWizardMode(true)}
-                            className="h-8 rounded-lg text-[10px] font-black uppercase tracking-widest"
                         >
-                            <ListOrdered className="w-3 h-3 mr-2" /> Passo a Passo
+                            <ListOrdered className="mr-2 h-3.5 w-3.5" /> Passo a Passo
                         </Button>
                     </div>
 
                     {isWizardMode && (
-                        <div className="flex items-center gap-4 flex-1 max-w-md">
-                            <div className="flex-1 h-1.5 bg-muted/20 rounded-full overflow-hidden">
-                                <div 
-                                    className="h-full bg-primary transition-all duration-500 ease-in-out"
-                                    style={{ width: `${(currentStep / totalSteps) * 100}%` }}
-                                />
-                            </div>
-                            <span className="text-[10px] font-black text-muted-foreground uppercase whitespace-nowrap">
+                        <div className="flex items-center gap-3 flex-1 max-w-md">
+                            <Progress value={(currentStep / totalSteps) * 100} className="flex-1 h-1.5" />
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">
                                 Etapa {currentStep} de {totalSteps}
                             </span>
                         </div>
@@ -230,37 +225,32 @@ export function CreateQuestionForm() {
                 {/* Área de Conteúdo */}
                 <div className="min-h-[400px]">
                     {!isWizardMode ? (
-                        <div className="space-y-8 animate-in fade-in duration-500">
+                        <div className="space-y-8">
                             {[1, 2, 3, 4, 5, 6, 7].map(step => (
                                 <div key={step}>{renderStep(step)}</div>
                             ))}
                         </div>
                     ) : (
-                        <div className="space-y-8 animate-in slide-in-from-right-4 fade-in duration-500">
+                        <div className="space-y-8">
                             {renderStep(currentStep)}
                             
                             {/* Navegação do Wizard */}
-                            <div className="flex items-center justify-between pt-8 border-t border-border/10">
+                            <div className="flex items-center justify-between pt-6 border-t">
                                 <Button
                                     variant="outline"
+                                    size="sm"
                                     onClick={prevStep}
                                     disabled={currentStep === 1}
-                                    className="h-10 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest"
                                 >
-                                    <ChevronLeft className="w-4 h-4 mr-2" /> Voltar
+                                    <ChevronLeft className="mr-2 h-4 w-4" /> Voltar
                                 </Button>
-                                
+
                                 {currentStep < totalSteps ? (
-                                    <Button
-                                        onClick={nextStep}
-                                        className="h-10 px-8 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20"
-                                    >
-                                        Próxima Etapa <ChevronRight className="w-4 h-4 ml-2" />
+                                    <Button size="sm" onClick={nextStep}>
+                                        Próxima Etapa <ChevronRight className="ml-2 h-4 w-4" />
                                     </Button>
                                 ) : (
-                                    <Button
-                                        className="h-10 px-8 rounded-xl text-[10px] font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-500/20"
-                                    >
+                                    <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">
                                         Finalizar e Publicar
                                     </Button>
                                 )}

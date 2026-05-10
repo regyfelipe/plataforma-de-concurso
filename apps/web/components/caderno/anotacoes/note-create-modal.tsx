@@ -4,10 +4,12 @@ import * as React from "react"
 import { Plus, Save } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
+import { Label } from "@workspace/ui/components/label"
 import { Textarea } from "@workspace/ui/components/textarea"
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,
@@ -31,57 +33,56 @@ export function NoteCreateModal({ onSave }: NoteCreateModalProps) {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger 
+            <DialogTrigger
                 render={
-                    <Button className="rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold text-[11px] uppercase tracking-widest h-11 px-6 hover:scale-[1.02] transition-all gap-2">
-                        <Plus className="w-4 h-4" />
+                    <Button size="sm">
+                        <Plus className="mr-2 h-4 w-4" />
                         Nova Anotação
                     </Button>
-                } 
+                }
             />
-            <DialogContent className="sm:max-w-[500px] bg-card border-border/40 rounded-[2rem] p-8">
-                <DialogHeader className="space-y-2">
-                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-primary">Novo Insight</p>
-                    <DialogTitle className="text-2xl font-black tracking-tighter">Criar Anotação</DialogTitle>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Criar Anotação</DialogTitle>
+                    <DialogDescription>Registre um insight, mnemônico ou resumo.</DialogDescription>
                 </DialogHeader>
-                
-                <div className="space-y-6 py-6">
+
+                <div className="space-y-4 py-2">
                     <div className="space-y-2">
-                        <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 ml-1">Título</label>
-                        <Input 
-                            placeholder="Ex: Diferença entre Crime e Contravenção" 
-                            className="h-12 bg-muted/20 border-border/40 rounded-xl text-sm"
+                        <Label htmlFor="nota-titulo">Título</Label>
+                        <Input
+                            id="nota-titulo"
+                            placeholder="Ex: Diferença entre Crime e Contravenção"
                             value={newNote.title}
-                            onChange={(e) => setNewNote({...newNote, title: e.target.value})}
+                            onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
                         />
                     </div>
                     <div className="space-y-2">
-                        <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 ml-1">Matéria</label>
-                        <Input 
-                            placeholder="Ex: Direito Penal" 
-                            className="h-12 bg-muted/20 border-border/40 rounded-xl text-sm"
+                        <Label htmlFor="nota-materia">Matéria</Label>
+                        <Input
+                            id="nota-materia"
+                            placeholder="Ex: Direito Penal"
                             value={newNote.subject}
-                            onChange={(e) => setNewNote({...newNote, subject: e.target.value})}
+                            onChange={(e) => setNewNote({ ...newNote, subject: e.target.value })}
                         />
                     </div>
                     <div className="space-y-2">
-                        <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 ml-1">Conteúdo</label>
-                        <Textarea 
-                            className="min-h-[150px] bg-muted/20 border-border/40 rounded-xl resize-none p-4 text-sm leading-relaxed"
+                        <Label htmlFor="nota-conteudo">Conteúdo</Label>
+                        <Textarea
+                            id="nota-conteudo"
+                            className="min-h-[140px] resize-none"
                             placeholder="Escreva sua explicação ou mnemônico aqui..."
                             value={newNote.content}
-                            onChange={(e) => setNewNote({...newNote, content: e.target.value})}
+                            onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
                         />
                     </div>
                 </div>
 
-                <DialogFooter className="gap-3 sm:justify-end">
-                    <Button variant="ghost" className="rounded-xl text-[10px] font-black uppercase tracking-widest" onClick={() => setOpen(false)}>
-                        Cancelar
-                    </Button>
-                    <Button className="rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-black text-[10px] uppercase tracking-widest px-8 hover:scale-[1.02] transition-all" onClick={handleSave}>
-                        <Save className="w-3.5 h-3.5 mr-2" />
-                        Salvar Anotação
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+                    <Button onClick={handleSave} disabled={!newNote.title || !newNote.content}>
+                        <Save className="mr-2 h-4 w-4" />
+                        Salvar
                     </Button>
                 </DialogFooter>
             </DialogContent>

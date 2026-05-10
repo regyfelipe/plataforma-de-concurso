@@ -1,14 +1,1194 @@
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
+  engineType = "library"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
-model User {
-  id    String @id @default(cuid())
-  email String @unique
-  name  String?
+// ────────────────────────────────────────────────
+// ENUMS
+// ────────────────────────────────────────────────
+enum PerfilUsuario {
+  aluno
+  professor
+  admin
+
+  @@map("perfil_usuario")
+}
+
+enum StatusUsuario {
+  ativo
+  inativo
+  banido
+  pendente
+
+  @@map("status_usuario")
+}
+
+enum StatusAssinatura {
+  ativa
+  cancelada
+  expirada
+  trial
+
+  @@map("status_assinatura")
+}
+
+enum VisibilidadePerfil {
+  privado
+  basico_publico
+  completo_publico
+
+  @@map("visibilidade_perfil")
+}
+
+enum StatusPedido {
+  pendente
+  processando
+  entregue
+  cancelado
+
+  @@map("status_pedido")
+}
+
+enum StatusConcurso {
+  aberto
+  previsto
+  encerrado
+
+  @@map("status_concurso")
+}
+
+enum AcessoQuestao {
+  free
+  premium
+
+  @@map("acesso_questao")
+}
+
+enum VisibilidadeQuestao {
+  publica
+  privada
+  restrita
+
+  @@map("visibilidade_questao")
+}
+
+enum StatusQuestao {
+  draft
+  published
+  archived
+  reported
+
+  @@map("status_questao")
+}
+
+enum StatusDenuncia {
+  pendente
+  em_analise
+  resolvida
+  ignorada
+
+  @@map("status_denuncia")
+}
+
+enum MotivoDenuncia {
+  gabarito_errado
+  enunciado_errado
+  alternativa_errada
+  questao_desatualizada
+  conteudo_inapropriado
+  outro
+
+  @@map("motivo_denuncia")
+}
+
+enum VisibilidadeCaderno {
+  privado
+  publico
+
+  @@map("visibilidade_caderno")
+}
+
+enum PeriodoRanking {
+  semanal
+  mensal
+  geral
+
+  @@map("periodo_ranking")
+}
+
+enum StatusRevisao {
+  pendente
+  revisada
+  adiada
+
+  @@map("status_revisao")
+}
+
+enum StatusTicket {
+  aberto
+  em_atendimento
+  aguardando_usuario
+  resolvido
+  fechado
+
+  @@map("status_ticket")
+}
+
+enum PrioridadeTicket {
+  baixa
+  media
+  alta
+  urgente
+
+  @@map("prioridade_ticket")
+}
+
+enum CategoriaTicket {
+  financeiro
+  tecnico
+  conteudo
+  conta
+  outro
+
+  @@map("categoria_ticket")
+}
+
+enum MetodoPagamento {
+  cartao_credito
+  cartao_debito
+  pix
+  boleto
+
+  @@map("metodo_pagamento")
+}
+
+enum StatusPagamento {
+  pendente
+  aprovado
+  recusado
+  reembolsado
+  cancelado
+  expirado
+
+  @@map("status_pagamento")
+}
+
+enum TipoNotificacao {
+  ranking_posicao
+  revisao_pendente
+  ticket_resposta
+  assinatura_vencendo
+  assinatura_vencida
+  questao_comentario
+  conquista
+  sistema
+
+  @@map("tipo_notificacao")
+}
+
+enum StatusSimulado {
+  draft
+  published
+  archived
+
+  @@map("status_simulado")
+}
+
+enum VisibilidadeSimulado {
+  privado
+  publico
+
+  @@map("visibilidade_simulado")
+}
+
+enum StatusTentativa {
+  em_andamento
+  concluida
+  abandonada
+  tempo_esgotado
+
+  @@map("status_tentativa")
+}
+
+// ────────────────────────────────────────────────
+// MODELOS
+// ────────────────────────────────────────────────
+
+model Plano {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome        String   @unique @db.VarChar(50)
+  duracaoDias Int      @map("duracao_dias")
+  preco       Decimal  @db.Decimal(10, 2)
+  descricao   String?
+  ativo       Boolean  @default(true)
+  criadoEm    DateTime @default(now()) @map("criado_em")
+
+  usuarios    Usuario[]
+  assinaturas Assinatura[]
+  pedidoItens PedidoItem[]
+
+  @@map("planos")
+}
+
+model Usuario {
+  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email            String        @unique @db.VarChar(255)
+  senhaHash        String?       @map("senha_hash")
+  nome             String        @db.VarChar(150)
+  sobrenome        String?       @db.VarChar(150)
+  cpf              String?       @unique @db.VarChar(14)
+  telefone         String?       @db.VarChar(20)
+  dataNascimento   DateTime?     @map("data_nascimento") @db.Date
+  avatarUrl        String?       @map("avatar_url")
+  perfil           PerfilUsuario @default(aluno)
+  status           StatusUsuario @default(pendente)
+  planoId          String?       @map("plano_id") @db.Uuid
+  emailVerificado  Boolean       @default(false) @map("email_verificado")
+  tokenVerificacao String?       @map("token_verificacao")
+  tokenExpiraEm    DateTime?     @map("token_expira_em")
+  ultimoAcesso     DateTime?     @map("ultimo_acesso")
+  criadoEm         DateTime      @default(now()) @map("criado_em")
+  atualizadoEm     DateTime      @default(now()) @updatedAt @map("atualizado_em")
+
+  plano            Plano?               @relation(fields: [planoId], references: [id], onDelete: SetNull)
+  sessoes          Sessao[]
+  recuperacoes     RecuperacaoSenha[]
+  assinaturas      Assinatura[]
+  perfilExtra      Perfil?
+  seguindo         Seguidor[]           @relation("SeguidorParaUsuario")
+  seguidores       Seguidor[]           @relation("UsuarioParaSeguidor")
+  enderecos        Endereco[]
+  historicoSenhas  HistoricoSenha[]
+  pedidos          Pedido[]
+  questoesAutor    Questao[]            @relation("QuestaoAutor")
+  questoesRevisor  Questao[]            @relation("QuestaoRevisor")
+  respostas        RespostaUsuario[]
+  favoritos        Favorito[]
+  comentarios      Comentario[]
+  curtidas         ComentarioCurtida[]
+  denuncias        Denuncia[]
+  denunciasResolv  Denuncia[]           @relation("DenunciaResolvidaPor")
+  cadernos         Caderno[]
+  rankings         Ranking[]
+  revisoes         Revisao[]
+  anotacoes        Anotacao[]
+  ticketsCriados   Ticket[]             @relation("TicketUsuario")
+  ticketsAtendidos Ticket[]             @relation("TicketAtendente")
+  ticketMensagens  TicketMensagem[]
+  estatisticas     EstatisticaUsuario[]
+  pagamentos       Pagamento[]
+  notificacoes     Notificacao[]
+  auditLogs        AuditLog[]
+  simuladosCriados Simulado[]
+  tentativasSimul  SimuladoTentativa[]
+  configsAtualiz   Configuracao[]
+  accounts         Account[]
+  verifications    Verification[]
+
+  @@index([email])
+  @@index([status])
+  @@index([planoId])
+  @@map("usuarios")
+}
+
+model Sessao {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuarioId    String   @map("usuario_id") @db.Uuid
+  refreshToken String   @unique @map("refresh_token")
+  dispositivo  String?  @db.VarChar(255)
+  ipAddress    String?  @map("ip_address") @db.VarChar(45)
+  expiraEm     DateTime @map("expira_em")
+  criadoEm     DateTime @default(now()) @map("criado_em")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@index([refreshToken])
+  @@map("sessoes")
+}
+
+model RecuperacaoSenha {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuarioId String   @map("usuario_id") @db.Uuid
+  token     String   @unique
+  usado     Boolean  @default(false)
+  expiraEm  DateTime @map("expira_em")
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@map("recuperacao_senha")
+}
+
+model Assinatura {
+  id            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuarioId     String           @map("usuario_id") @db.Uuid
+  planoId       String           @map("plano_id") @db.Uuid
+  status        StatusAssinatura @default(trial)
+  inicioEm      DateTime         @default(now()) @map("inicio_em")
+  expiraEm      DateTime?        @map("expira_em")
+  renovacaoAuto Boolean          @default(true) @map("renovacao_auto")
+  criadoEm      DateTime         @default(now()) @map("criado_em")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  plano   Plano   @relation(fields: [planoId], references: [id])
+
+  @@index([usuarioId])
+  @@map("assinaturas")
+}
+
+model Perfil {
+  usuarioId    String             @id @map("usuario_id") @db.Uuid
+  nomeExibicao String?            @map("nome_exibicao") @db.VarChar(100)
+  avatarUrl    String?            @map("avatar_url")
+  bio          String?            @db.VarChar(2000)
+  telefone     String?            @db.VarChar(20)
+  carreiraId   String?            @map("carreira_id") @db.Uuid
+  visibilidade VisibilidadePerfil @default(privado)
+  instagram    String?            @db.VarChar(100)
+  tiktok       String?            @db.VarChar(100)
+  facebook     String?            @db.VarChar(100)
+  atualizadoEm DateTime           @default(now()) @updatedAt @map("atualizado_em")
+
+  usuario  Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  carreira Carreira? @relation(fields: [carreiraId], references: [id], onDelete: SetNull)
+
+  @@index([carreiraId])
+  @@map("perfis")
+}
+
+model Seguidor {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuarioId  String   @map("usuario_id") @db.Uuid
+  seguidorId String   @map("seguidor_id") @db.Uuid
+  criadoEm   DateTime @default(now()) @map("criado_em")
+
+  usuario  Usuario @relation("UsuarioParaSeguidor", fields: [usuarioId], references: [id], onDelete: Cascade)
+  seguidor Usuario @relation("SeguidorParaUsuario", fields: [seguidorId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, seguidorId])
+  @@index([usuarioId])
+  @@index([seguidorId])
+  @@map("seguidores")
+}
+
+model Endereco {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuarioId   String   @map("usuario_id") @db.Uuid
+  apelido     String?  @db.VarChar(50)
+  cep         String   @db.VarChar(9)
+  logradouro  String   @db.VarChar(200)
+  numero      String   @db.VarChar(20)
+  complemento String?  @db.VarChar(100)
+  referencia  String?  @db.VarChar(200)
+  bairro      String   @db.VarChar(100)
+  cidade      String   @db.VarChar(100)
+  estado      String   @db.Char(2)
+  principal   Boolean  @default(false)
+  criadoEm    DateTime @default(now()) @map("criado_em")
+
+  usuario Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  pedidos Pedido[]
+
+  @@index([usuarioId])
+  @@map("enderecos")
+}
+
+model HistoricoSenha {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuarioId   String   @map("usuario_id") @db.Uuid
+  ipAddress   String?  @map("ip_address") @db.VarChar(45)
+  dispositivo String?  @db.VarChar(255)
+  criadoEm    DateTime @default(now()) @map("criado_em")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@map("historico_senhas")
+}
+
+model Pedido {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  codigo          String       @unique @db.VarChar(20)
+  usuarioId       String       @map("usuario_id") @db.Uuid
+  status          StatusPedido @default(pendente)
+  descricao       String
+  total           Decimal      @db.Decimal(10, 2)
+  quantidadeItens Int          @default(1) @map("quantidade_itens")
+  enderecoId      String?      @map("endereco_id") @db.Uuid
+  criadoEm        DateTime     @default(now()) @map("criado_em")
+  atualizadoEm    DateTime     @default(now()) @updatedAt @map("atualizado_em")
+
+  usuario    Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  endereco   Endereco?    @relation(fields: [enderecoId], references: [id], onDelete: SetNull)
+  itens      PedidoItem[]
+  pagamentos Pagamento[]
+
+  @@index([usuarioId])
+  @@index([status])
+  @@index([codigo])
+  @@map("pedidos")
+}
+
+model PedidoItem {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pedidoId  String   @map("pedido_id") @db.Uuid
+  planoId   String   @map("plano_id") @db.Uuid
+  descricao String
+  preco     Decimal  @db.Decimal(10, 2)
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  pedido Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  plano  Plano  @relation(fields: [planoId], references: [id])
+
+  @@index([pedidoId])
+  @@map("pedido_itens")
+}
+
+model NivelEducacional {
+  id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome     String   @unique @db.VarChar(100)
+  ativo    Boolean  @default(true)
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  concursos Concurso[]
+  questoes  Questao[]
+
+  @@map("niveis_educacionais")
+}
+
+model Dificuldade {
+  id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome     String   @unique @db.VarChar(50)
+  slug     String   @unique @db.VarChar(50)
+  ativo    Boolean  @default(true)
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  questoes Questao[]
+
+  @@map("dificuldades")
+}
+
+model Banca {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome      String   @unique @db.VarChar(150)
+  sigla     String   @unique @db.VarChar(30)
+  descricao String?
+  ativo     Boolean  @default(true)
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  concursos Concurso[]
+  questoes  Questao[]
+
+  @@map("bancas")
+}
+
+model Carreira {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome      String   @unique @db.VarChar(100)
+  descricao String?
+  ativo     Boolean  @default(true)
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  perfis    Perfil[]
+  concursos Concurso[]
+  questoes  Questao[]
+  rankings  Ranking[]
+  simulados Simulado[]
+
+  @@map("carreiras")
+}
+
+model Concurso {
+  id         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome       String         @db.VarChar(255)
+  bancaId    String?        @map("banca_id") @db.Uuid
+  carreiraId String?        @map("carreira_id") @db.Uuid
+  nivelId    String?        @map("nivel_id") @db.Uuid
+  ano        Int?           @db.SmallInt
+  status     StatusConcurso @default(previsto)
+  ativo      Boolean        @default(true)
+  criadoEm   DateTime       @default(now()) @map("criado_em")
+
+  banca     Banca?            @relation(fields: [bancaId], references: [id], onDelete: SetNull)
+  carreira  Carreira?         @relation(fields: [carreiraId], references: [id], onDelete: SetNull)
+  nivel     NivelEducacional? @relation(fields: [nivelId], references: [id], onDelete: SetNull)
+  questoes  Questao[]
+  simulados Simulado[]
+
+  @@map("concursos")
+}
+
+model Disciplina {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code      String   @unique @db.VarChar(20)
+  nome      String   @unique @db.VarChar(150)
+  descricao String?
+  ativo     Boolean  @default(true)
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  assuntos     Assunto[]
+  questoes     Questao[]
+  estatisticas EstatisticaUsuario[]
+
+  @@map("disciplinas")
+}
+
+model Assunto {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  disciplinaId String   @map("disciplina_id") @db.Uuid
+  nome         String   @db.VarChar(200)
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now()) @map("criado_em")
+
+  disciplina Disciplina @relation(fields: [disciplinaId], references: [id], onDelete: Cascade)
+  topicos    Topico[]
+  questoes   Questao[]
+
+  @@unique([disciplinaId, nome])
+  @@map("assuntos")
+}
+
+model Topico {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  assuntoId String   @map("assunto_id") @db.Uuid
+  nome      String   @db.VarChar(200)
+  ativo     Boolean  @default(true)
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  assunto    Assunto     @relation(fields: [assuntoId], references: [id], onDelete: Cascade)
+  subtopicos Subtopico[]
+  questoes   Questao[]
+
+  @@unique([assuntoId, nome])
+  @@map("topicos")
+}
+
+model Subtopico {
+  id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  topicoId String   @map("topico_id") @db.Uuid
+  nome     String   @db.VarChar(200)
+  ativo    Boolean  @default(true)
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  topico   Topico    @relation(fields: [topicoId], references: [id], onDelete: Cascade)
+  questoes Questao[]
+
+  @@unique([topicoId, nome])
+  @@map("subtopicos")
+}
+
+model TipoQuestao {
+  id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome     String   @unique @db.VarChar(100)
+  slug     String   @unique @db.VarChar(50)
+  ativo    Boolean  @default(true)
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  questoes Questao[]
+
+  @@map("tipos_questao")
+}
+
+model Questao {
+  id               String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code             String              @unique @db.VarChar(20)
+  disciplinaId     String?             @map("disciplina_id") @db.Uuid
+  assuntoId        String?             @map("assunto_id") @db.Uuid
+  topicoId         String?             @map("topico_id") @db.Uuid
+  subtopicoId      String?             @map("subtopico_id") @db.Uuid
+  bancaId          String?             @map("banca_id") @db.Uuid
+  concursoId       String?             @map("concurso_id") @db.Uuid
+  carreiraId       String?             @map("carreira_id") @db.Uuid
+  nivelId          String?             @map("nivel_id") @db.Uuid
+  dificuldadeId    String?             @map("dificuldade_id") @db.Uuid
+  tipoId           String?             @map("tipo_id") @db.Uuid
+  instituicao      String?             @db.VarChar(150)
+  ano              Int?                @db.SmallInt
+  isInedita        Boolean             @default(false) @map("is_inedita")
+  enunciado        String
+  textoApoio       String?             @map("texto_apoio")
+  resolucao        String?
+  hasVideo         Boolean             @default(false) @map("has_video")
+  acesso           AcessoQuestao       @default(free)
+  visibilidade     VisibilidadeQuestao @default(publica)
+  status           StatusQuestao       @default(draft)
+  autorId          String?             @map("autor_id") @db.Uuid
+  revisorId        String?             @map("revisor_id") @db.Uuid
+  revisadoEm       DateTime?           @map("revisado_em")
+  totalRespostas   Int                 @default(0) @map("total_respostas")
+  taxaAcerto       Decimal             @default(0) @map("taxa_acerto") @db.Decimal(5, 2)
+  tempoMedioSeg    Int                 @default(0) @map("tempo_medio_seg")
+  totalComentarios Int                 @default(0) @map("total_comentarios")
+  totalDenuncias   Int                 @default(0) @map("total_denuncias")
+  criadoEm         DateTime            @default(now()) @map("criado_em")
+  atualizadoEm     DateTime            @default(now()) @updatedAt @map("atualizado_em")
+
+  disciplina  Disciplina?       @relation(fields: [disciplinaId], references: [id], onDelete: SetNull)
+  assunto     Assunto?          @relation(fields: [assuntoId], references: [id], onDelete: SetNull)
+  topico      Topico?           @relation(fields: [topicoId], references: [id], onDelete: SetNull)
+  subtopico   Subtopico?        @relation(fields: [subtopicoId], references: [id], onDelete: SetNull)
+  banca       Banca?            @relation(fields: [bancaId], references: [id], onDelete: SetNull)
+  concurso    Concurso?         @relation(fields: [concursoId], references: [id], onDelete: SetNull)
+  carreira    Carreira?         @relation(fields: [carreiraId], references: [id], onDelete: SetNull)
+  nivel       NivelEducacional? @relation(fields: [nivelId], references: [id], onDelete: SetNull)
+  dificuldade Dificuldade?      @relation(fields: [dificuldadeId], references: [id], onDelete: SetNull)
+  tipo        TipoQuestao?      @relation(fields: [tipoId], references: [id], onDelete: SetNull)
+  autor       Usuario?          @relation("QuestaoAutor", fields: [autorId], references: [id], onDelete: SetNull)
+  revisor     Usuario?          @relation("QuestaoRevisor", fields: [revisorId], references: [id], onDelete: SetNull)
+
+  alternativas     Alternativa[]
+  tags             QuestaoTag[]
+  keywords         QuestaoKeyword[]
+  objetivos        QuestaoObjetivo[]
+  referencias      QuestaoReferencia[]
+  videos           QuestaoVideo[]
+  respostas        RespostaUsuario[]
+  favoritos        Favorito[]
+  comentarios      Comentario[]
+  denuncias        Denuncia[]
+  cadernos         CadernoQuestao[]
+  revisoes         Revisao[]
+  anotacoes        Anotacao[]
+  simuladoQuestoes SimuladoQuestao[]
+  simuladoRespos   SimuladoResposta[]
+
+  @@index([disciplinaId])
+  @@index([bancaId])
+  @@index([status])
+  @@index([acesso])
+  @@index([dificuldadeId])
+  @@index([ano])
+  @@map("questoes")
+}
+
+model Alternativa {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  questaoId  String   @map("questao_id") @db.Uuid
+  letra      String   @db.Char(1)
+  texto      String
+  isCorreta  Boolean  @default(false) @map("is_correta")
+  percentual Decimal? @db.Decimal(5, 2)
+  explicacao String?
+  referencia String?
+  dica       String?
+
+  questao           Questao            @relation(fields: [questaoId], references: [id], onDelete: Cascade)
+  respostasUsuarios RespostaUsuario[]
+  simuladoRespostas SimuladoResposta[]
+
+  @@unique([questaoId, letra])
+  @@index([questaoId])
+  @@map("alternativas")
+}
+
+model QuestaoTag {
+  questaoId String @map("questao_id") @db.Uuid
+  tag       String @db.VarChar(100)
+
+  questao Questao @relation(fields: [questaoId], references: [id], onDelete: Cascade)
+
+  @@id([questaoId, tag])
+  @@map("questao_tags")
+}
+
+model QuestaoKeyword {
+  questaoId String @map("questao_id") @db.Uuid
+  keyword   String @db.VarChar(100)
+
+  questao Questao @relation(fields: [questaoId], references: [id], onDelete: Cascade)
+
+  @@id([questaoId, keyword])
+  @@map("questao_keywords")
+}
+
+model QuestaoObjetivo {
+  id        String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  questaoId String @map("questao_id") @db.Uuid
+  descricao String
+
+  questao Questao @relation(fields: [questaoId], references: [id], onDelete: Cascade)
+
+  @@map("questao_objetivos")
+}
+
+model QuestaoReferencia {
+  id        String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  questaoId String @map("questao_id") @db.Uuid
+  texto     String
+
+  questao Questao @relation(fields: [questaoId], references: [id], onDelete: Cascade)
+
+  @@map("questao_referencias")
+}
+
+model QuestaoVideo {
+  id        String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  questaoId String @map("questao_id") @db.Uuid
+  titulo    String @db.VarChar(200)
+  url       String
+
+  questao Questao @relation(fields: [questaoId], references: [id], onDelete: Cascade)
+
+  @@map("questao_videos")
+}
+
+model RespostaUsuario {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuarioId     String   @map("usuario_id") @db.Uuid
+  questaoId     String   @map("questao_id") @db.Uuid
+  alternativaId String?  @map("alternativa_id") @db.Uuid
+  isCorreta     Boolean  @map("is_correta")
+  tempoSeg      Int?     @map("tempo_seg")
+  respondidoEm  DateTime @default(now()) @map("respondido_em")
+
+  usuario     Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  questao     Questao      @relation(fields: [questaoId], references: [id], onDelete: Cascade)
+  alternativa Alternativa? @relation(fields: [alternativaId], references: [id], onDelete: SetNull)
+
+  @@unique([usuarioId, questaoId])
+  @@index([usuarioId])
+  @@index([questaoId])
+  @@map("respostas_usuarios")
+}
+
+model Favorito {
+  usuarioId String   @map("usuario_id") @db.Uuid
+  questaoId String   @map("questao_id") @db.Uuid
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  questao Questao @relation(fields: [questaoId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, questaoId])
+  @@index([usuarioId])
+  @@map("favoritos")
+}
+
+model Comentario {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  questaoId     String   @map("questao_id") @db.Uuid
+  usuarioId     String   @map("usuario_id") @db.Uuid
+  parentId      String?  @map("parent_id") @db.Uuid
+  texto         String
+  totalCurtidas Int      @default(0) @map("total_curtidas")
+  isProfessor   Boolean  @default(false) @map("is_professor")
+  editado       Boolean  @default(false)
+  criadoEm      DateTime @default(now()) @map("criado_em")
+  atualizadoEm  DateTime @default(now()) @updatedAt @map("atualizado_em")
+
+  questao   Questao             @relation(fields: [questaoId], references: [id], onDelete: Cascade)
+  usuario   Usuario             @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  parent    Comentario?         @relation("ComentarioRespostas", fields: [parentId], references: [id], onDelete: Cascade)
+  respostas Comentario[]        @relation("ComentarioRespostas")
+  curtidas  ComentarioCurtida[]
+
+  @@index([questaoId])
+  @@index([usuarioId])
+  @@index([parentId])
+  @@map("comentarios")
+}
+
+model ComentarioCurtida {
+  usuarioId    String   @map("usuario_id") @db.Uuid
+  comentarioId String   @map("comentario_id") @db.Uuid
+  criadoEm     DateTime @default(now()) @map("criado_em")
+
+  usuario    Usuario    @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  comentario Comentario @relation(fields: [comentarioId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, comentarioId])
+  @@map("comentario_curtidas")
+}
+
+model Denuncia {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  questaoId    String         @map("questao_id") @db.Uuid
+  usuarioId    String         @map("usuario_id") @db.Uuid
+  motivo       MotivoDenuncia
+  descricao    String?
+  status       StatusDenuncia @default(pendente)
+  resolvidoPor String?        @map("resolvido_por") @db.Uuid
+  resolvidoEm  DateTime?      @map("resolvido_em")
+  criadoEm     DateTime       @default(now()) @map("criado_em")
+
+  questao       Questao  @relation(fields: [questaoId], references: [id], onDelete: Cascade)
+  usuario       Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  resolvidoPela Usuario? @relation("DenunciaResolvidaPor", fields: [resolvidoPor], references: [id], onDelete: SetNull)
+
+  @@unique([questaoId, usuarioId])
+  @@index([questaoId])
+  @@index([status])
+  @@map("denuncias")
+}
+
+model Caderno {
+  id           String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuarioId    String              @map("usuario_id") @db.Uuid
+  nome         String              @db.VarChar(200)
+  descricao    String?
+  visibilidade VisibilidadeCaderno @default(privado)
+  capaUrl      String?             @map("capa_url")
+  criadoEm     DateTime            @default(now()) @map("criado_em")
+  atualizadoEm DateTime            @default(now()) @updatedAt @map("atualizado_em")
+
+  usuario  Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  questoes CadernoQuestao[]
+
+  @@index([usuarioId])
+  @@map("cadernos")
+}
+
+model CadernoQuestao {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cadernoId    String   @map("caderno_id") @db.Uuid
+  questaoId    String   @map("questao_id") @db.Uuid
+  ordem        Int      @default(0)
+  anotacao     String?
+  adicionadoEm DateTime @default(now()) @map("adicionado_em")
+
+  caderno Caderno @relation(fields: [cadernoId], references: [id], onDelete: Cascade)
+  questao Questao @relation(fields: [questaoId], references: [id], onDelete: Cascade)
+
+  @@unique([cadernoId, questaoId])
+  @@index([cadernoId])
+  @@map("caderno_questoes")
+}
+
+model Ranking {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuarioId     String         @map("usuario_id") @db.Uuid
+  carreiraId    String?        @map("carreira_id") @db.Uuid
+  periodo       PeriodoRanking @default(geral)
+  pontuacao     Int            @default(0)
+  posicao       Int?
+  totalQuestoes Int            @default(0) @map("total_questoes")
+  taxaAcerto    Decimal        @default(0) @map("taxa_acerto") @db.Decimal(5, 2)
+  referenciaEm  DateTime       @map("referencia_em") @db.Date
+  atualizadoEm  DateTime       @default(now()) @updatedAt @map("atualizado_em")
+
+  usuario  Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  carreira Carreira? @relation(fields: [carreiraId], references: [id], onDelete: SetNull)
+
+  @@unique([usuarioId, carreiraId, periodo, referenciaEm])
+  @@index([usuarioId])
+  @@index([periodo, referenciaEm])
+  @@index([carreiraId])
+  @@map("rankings")
+}
+
+model Revisao {
+  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuarioId      String        @map("usuario_id") @db.Uuid
+  questaoId      String        @map("questao_id") @db.Uuid
+  status         StatusRevisao @default(pendente)
+  intervaloDias  Int           @default(1) @map("intervalo_dias")
+  facilidade     Decimal       @default(2.5) @db.Decimal(4, 2)
+  repeticoes     Int           @default(0)
+  proximaRevisao DateTime      @map("proxima_revisao") @db.Date
+  ultimaRevisao  DateTime?     @map("ultima_revisao")
+  criadoEm       DateTime      @default(now()) @map("criado_em")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  questao Questao @relation(fields: [questaoId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, questaoId])
+  @@index([usuarioId])
+  @@index([usuarioId, proximaRevisao])
+  @@map("revisoes")
+}
+
+model Anotacao {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuarioId    String   @map("usuario_id") @db.Uuid
+  questaoId    String   @map("questao_id") @db.Uuid
+  texto        String
+  cor          String   @default("yellow") @db.VarChar(20)
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  questao Questao @relation(fields: [questaoId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, questaoId])
+  @@index([usuarioId])
+  @@map("anotacoes")
+}
+
+model Ticket {
+  id           String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  codigo       String           @unique @db.VarChar(20)
+  usuarioId    String           @map("usuario_id") @db.Uuid
+  atendenteId  String?          @map("atendente_id") @db.Uuid
+  categoria    CategoriaTicket  @default(outro)
+  prioridade   PrioridadeTicket @default(media)
+  status       StatusTicket     @default(aberto)
+  assunto      String           @db.VarChar(255)
+  criadoEm     DateTime         @default(now()) @map("criado_em")
+  atualizadoEm DateTime         @default(now()) @updatedAt @map("atualizado_em")
+  fechadoEm    DateTime?        @map("fechado_em")
+
+  usuario   Usuario          @relation("TicketUsuario", fields: [usuarioId], references: [id], onDelete: Cascade)
+  atendente Usuario?         @relation("TicketAtendente", fields: [atendenteId], references: [id], onDelete: SetNull)
+  mensagens TicketMensagem[]
+
+  @@index([usuarioId])
+  @@index([status])
+  @@map("tickets")
+}
+
+model TicketMensagem {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticketId  String   @map("ticket_id") @db.Uuid
+  usuarioId String   @map("usuario_id") @db.Uuid
+  texto     String
+  isInterno Boolean  @default(false) @map("is_interno")
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  ticket  Ticket        @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  usuario Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  anexos  TicketAnexo[]
+
+  @@index([ticketId])
+  @@map("ticket_mensagens")
+}
+
+model TicketAnexo {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  mensagemId String   @map("mensagem_id") @db.Uuid
+  url        String
+  nome       String?  @db.VarChar(255)
+  criadoEm   DateTime @default(now()) @map("criado_em")
+
+  mensagem TicketMensagem @relation(fields: [mensagemId], references: [id], onDelete: Cascade)
+
+  @@map("ticket_anexos")
+}
+
+model EstatisticaUsuario {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuarioId        String    @map("usuario_id") @db.Uuid
+  disciplinaId     String?   @map("disciplina_id") @db.Uuid
+  totalQuestoes    Int       @default(0) @map("total_questoes")
+  totalCorretas    Int       @default(0) @map("total_corretas")
+  totalErradas     Int       @default(0) @map("total_erradas")
+  taxaAcerto       Decimal   @default(0) @map("taxa_acerto") @db.Decimal(5, 2)
+  tempoTotalSeg    Int       @default(0) @map("tempo_total_seg")
+  tempoMedioSeg    Int       @default(0) @map("tempo_medio_seg")
+  sequenciaAtual   Int       @default(0) @map("sequencia_atual")
+  maiorSequencia   Int       @default(0) @map("maior_sequencia")
+  referenciaInicio DateTime  @default(now()) @map("referencia_inicio") @db.Date
+  referenciaFim    DateTime? @map("referencia_fim") @db.Date
+  atualizadoEm     DateTime  @default(now()) @updatedAt @map("atualizado_em")
+
+  usuario    Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  disciplina Disciplina? @relation(fields: [disciplinaId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, disciplinaId, referenciaInicio])
+  @@index([usuarioId])
+  @@index([disciplinaId])
+  @@map("estatisticas_usuario")
+}
+
+model Pagamento {
+  id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pedidoId         String          @map("pedido_id") @db.Uuid
+  usuarioId        String          @map("usuario_id") @db.Uuid
+  gateway          String          @db.VarChar(50)
+  gatewayId        String?         @unique @map("gateway_id") @db.VarChar(255)
+  gatewayPayload   Json?           @map("gateway_payload")
+  metodo           MetodoPagamento
+  valor            Decimal         @db.Decimal(10, 2)
+  valorReembolsado Decimal         @default(0) @map("valor_reembolsado") @db.Decimal(10, 2)
+  moeda            String          @default("BRL") @db.Char(3)
+  parcelas         Int             @default(1) @db.SmallInt
+  status           StatusPagamento @default(pendente)
+  aprovadoEm       DateTime?       @map("aprovado_em")
+  reembolsadoEm    DateTime?       @map("reembolsado_em")
+  cartaoBandeira   String?         @map("cartao_bandeira") @db.VarChar(20)
+  cartaoFinal      String?         @map("cartao_final") @db.Char(4)
+  criadoEm         DateTime        @default(now()) @map("criado_em")
+  atualizadoEm     DateTime        @default(now()) @updatedAt @map("atualizado_em")
+
+  pedido  Pedido  @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([pedidoId])
+  @@index([usuarioId])
+  @@index([status])
+  @@index([gatewayId])
+  @@map("pagamentos")
+}
+
+model Notificacao {
+  id        String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuarioId String          @map("usuario_id") @db.Uuid
+  tipo      TipoNotificacao
+  titulo    String          @db.VarChar(200)
+  mensagem  String
+  link      String?
+  lida      Boolean         @default(false)
+  lidaEm    DateTime?       @map("lida_em")
+  criadoEm  DateTime        @default(now()) @map("criado_em")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@index([usuarioId, lida])
+  @@map("notificacoes")
+}
+
+model AuditLog {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuarioId   String?  @map("usuario_id") @db.Uuid
+  acao        String   @db.VarChar(100)
+  tabela      String?  @db.VarChar(100)
+  registroId  String?  @map("registro_id") @db.Uuid
+  dadosAntes  Json?    @map("dados_antes")
+  dadosDepois Json?    @map("dados_depois")
+  ipAddress   String?  @map("ip_address") @db.VarChar(45)
+  userAgent   String?  @map("user_agent")
+  criadoEm    DateTime @default(now()) @map("criado_em")
+
+  usuario Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+
+  @@index([usuarioId])
+  @@index([tabela, registroId])
+  @@index([criadoEm])
+  @@map("audit_logs")
+}
+
+model Simulado {
+  id                     String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  criadorId              String               @map("criador_id") @db.Uuid
+  titulo                 String               @db.VarChar(255)
+  descricao              String?
+  instrucoes             String?
+  tempoLimiteMin         Int?                 @map("tempo_limite_min")
+  embaralharQuestoes     Boolean              @default(false) @map("embaralhar_questoes")
+  embaralharAlternativas Boolean              @default(false) @map("embaralhar_alternativas")
+  gabaritoAoFinal        Boolean              @default(true) @map("gabarito_ao_final")
+  carreiraId             String?              @map("carreira_id") @db.Uuid
+  concursoId             String?              @map("concurso_id") @db.Uuid
+  status                 StatusSimulado       @default(draft)
+  visibilidade           VisibilidadeSimulado @default(privado)
+  criadoEm               DateTime             @default(now()) @map("criado_em")
+  atualizadoEm           DateTime             @default(now()) @updatedAt @map("atualizado_em")
+
+  criador    Usuario             @relation(fields: [criadorId], references: [id], onDelete: Cascade)
+  carreira   Carreira?           @relation(fields: [carreiraId], references: [id], onDelete: SetNull)
+  concurso   Concurso?           @relation(fields: [concursoId], references: [id], onDelete: SetNull)
+  questoes   SimuladoQuestao[]
+  tentativas SimuladoTentativa[]
+
+  @@index([criadorId])
+  @@index([status])
+  @@map("simulados")
+}
+
+model SimuladoQuestao {
+  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  simuladoId String  @map("simulado_id") @db.Uuid
+  questaoId  String  @map("questao_id") @db.Uuid
+  ordem      Int     @default(0)
+  peso       Decimal @default(1.0) @db.Decimal(4, 2)
+
+  simulado Simulado @relation(fields: [simuladoId], references: [id], onDelete: Cascade)
+  questao  Questao  @relation(fields: [questaoId], references: [id], onDelete: Cascade)
+
+  @@unique([simuladoId, questaoId])
+  @@index([simuladoId])
+  @@map("simulado_questoes")
+}
+
+model SimuladoTentativa {
+  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  simuladoId    String          @map("simulado_id") @db.Uuid
+  usuarioId     String          @map("usuario_id") @db.Uuid
+  status        StatusTentativa @default(em_andamento)
+  pontuacao     Decimal?        @db.Decimal(8, 2)
+  totalCorretas Int?            @map("total_corretas")
+  totalErradas  Int?            @map("total_erradas")
+  tempoGastoSeg Int?            @map("tempo_gasto_seg")
+  iniciadoEm    DateTime        @default(now()) @map("iniciado_em")
+  finalizadoEm  DateTime?       @map("finalizado_em")
+
+  simulado  Simulado           @relation(fields: [simuladoId], references: [id], onDelete: Cascade)
+  usuario   Usuario            @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  respostas SimuladoResposta[]
+
+  @@index([usuarioId])
+  @@index([simuladoId])
+  @@map("simulado_tentativas")
+}
+
+model SimuladoResposta {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tentativaId   String   @map("tentativa_id") @db.Uuid
+  questaoId     String   @map("questao_id") @db.Uuid
+  alternativaId String?  @map("alternativa_id") @db.Uuid
+  isCorreta     Boolean? @map("is_correta")
+  tempoSeg      Int?     @map("tempo_seg")
+  respondidoEm  DateTime @default(now()) @map("respondido_em")
+
+  tentativa   SimuladoTentativa @relation(fields: [tentativaId], references: [id], onDelete: Cascade)
+  questao     Questao           @relation(fields: [questaoId], references: [id], onDelete: Cascade)
+  alternativa Alternativa?      @relation(fields: [alternativaId], references: [id], onDelete: SetNull)
+
+  @@unique([tentativaId, questaoId])
+  @@index([tentativaId])
+  @@map("simulado_respostas")
+}
+
+model Configuracao {
+  chave         String   @id @db.VarChar(100)
+  valor         String
+  descricao     String?
+  tipo          String   @default("string") @db.VarChar(20)
+  editavel      Boolean  @default(true)
+  atualizadoPor String?  @map("atualizado_por") @db.Uuid
+  atualizadoEm  DateTime @default(now()) @updatedAt @map("atualizado_em")
+
+  usuario Usuario? @relation(fields: [atualizadoPor], references: [id], onDelete: SetNull)
+
+  @@map("configuracoes")
+}
+
+model Account {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId             String
+  providerId            String
+  userId                String    @db.Uuid
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user Usuario @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  userId     String?  @db.Uuid
+  user       Usuario? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("verifications")
 }

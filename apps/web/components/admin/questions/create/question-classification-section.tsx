@@ -25,12 +25,12 @@ export function QuestionClassificationSection({ onTypeChange, onFieldChange, val
     return (
         <section className="space-y-4">
             <div className="flex items-center gap-2 px-1">
-                <div className="w-6 h-6 rounded-md bg-muted/10 flex items-center justify-center border">
-                    <span className="text-[10px] font-black">1</span>
+                <div className="h-6 w-6 rounded-md border bg-muted flex items-center justify-center">
+                    <span className="text-xs font-medium">1</span>
                 </div>
-                <h2 className="text-xs font-black uppercase tracking-widest text-foreground/70">Classificação da Questão</h2>
+                <h2 className="text-sm font-medium text-muted-foreground">Classificação da Questão</h2>
             </div>
-            <Card className="rounded-xl border shadow-none bg-muted/5">
+            <Card>
                 <CardContent className="p-6 grid grid-cols-1 md:grid-cols-4 gap-6">
                     {/* Linha 1 */}
                     <div className="space-y-1.5">

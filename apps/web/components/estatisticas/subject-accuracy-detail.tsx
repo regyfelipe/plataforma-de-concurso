@@ -2,6 +2,9 @@
 
 import * as React from "react"
 import { ChevronDown, ChevronUp, Target, AlertCircle } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card"
+import { Progress } from "@workspace/ui/components/progress"
+import { Separator } from "@workspace/ui/components/separator"
 
 interface SubjectAccuracyDetailProps {
     disciplines: {
@@ -12,61 +15,64 @@ interface SubjectAccuracyDetailProps {
     }[]
 }
 
+const PRECISION_COLOR = (p: number) =>
+    p >= 80 ? "text-emerald-500" : p >= 60 ? "text-foreground" : "text-orange-500"
+
+const BAR_COLOR = (p: number) =>
+    p >= 80 ? "bg-emerald-500" : p >= 60 ? "bg-primary" : "bg-orange-500"
+
 export function SubjectAccuracyDetail({ disciplines }: SubjectAccuracyDetailProps) {
     const [expanded, setExpanded] = React.useState<string | null>(null)
 
     return (
-        <div className="bg-card dark:bg-muted/10 border border-border/40 rounded-[2rem] p-8 space-y-6 shadow-sm">
-            <div className="flex items-center justify-between">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40">Detalhamento por Assunto</p>
-                <Target className="w-4 h-4 text-primary/40" />
-            </div>
-
-            <div className="space-y-3">
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Detalhamento por Assunto</CardTitle>
+                <Target className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent className="space-y-2">
                 {disciplines.map((item) => (
-                    <div key={item.name} className="border border-border/20 rounded-2xl overflow-hidden transition-all">
-                        <button 
+                    <div key={item.name} className="rounded-md border overflow-hidden">
+                        <button
                             onClick={() => setExpanded(expanded === item.name ? null : item.name)}
-                            className="w-full flex items-center justify-between p-4 hover:bg-muted/5 transition-colors"
+                            className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/40 transition-colors text-sm"
                         >
-                            <div className="flex items-center gap-4">
-                                <div className={`w-2 h-2 rounded-full ${item.precision >= 80 ? 'bg-emerald-500' : 'bg-primary'}`} />
-                                <span className="text-sm font-black text-foreground">{item.name}</span>
+                            <div className="flex items-center gap-2">
+                                <div className={`h-2 w-2 rounded-full ${item.precision >= 80 ? "bg-emerald-500" : "bg-primary"}`} />
+                                <span className="font-medium">{item.name}</span>
                             </div>
-                            <div className="flex items-center gap-6">
-                                <span className="text-sm font-black text-foreground">{item.precision}%</span>
-                                {expanded === item.name ? <ChevronUp className="w-4 h-4 text-muted-foreground/40" /> : <ChevronDown className="w-4 h-4 text-muted-foreground/40" />}
+                            <div className="flex items-center gap-3">
+                                <span className={`font-semibold text-sm ${PRECISION_COLOR(item.precision)}`}>
+                                    {item.precision}%
+                                </span>
+                                {expanded === item.name
+                                    ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                                    : <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                }
                             </div>
                         </button>
 
                         {expanded === item.name && (
-                            <div className="p-4 pt-0 space-y-4 animate-in slide-in-from-top duration-300">
-                                <div className="h-[1px] bg-border/20 w-full" />
+                            <div className="px-4 pb-4 space-y-3">
+                                <Separator />
                                 {item.topics.map((topic) => (
-                                    <div key={topic.name} className="flex items-center justify-between pl-6">
-                                        <span className="text-xs font-medium text-muted-foreground">{topic.name}</span>
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-24 h-1.5 bg-muted/20 rounded-full overflow-hidden">
-                                                <div 
-                                                    className={`h-full rounded-full ${topic.precision >= 80 ? 'bg-emerald-500' : topic.precision >= 60 ? 'bg-primary' : 'bg-orange-500'}`}
-                                                    style={{ width: `${topic.precision}%` }}
-                                                />
-                                            </div>
-                                            <span className="text-[10px] font-black text-foreground w-8">{topic.precision}%</span>
-                                        </div>
+                                    <div key={topic.name} className="flex items-center gap-3 pl-4">
+                                        <span className="text-xs text-muted-foreground flex-1 truncate">{topic.name}</span>
+                                        <Progress value={topic.precision} className="w-24 h-1.5" />
+                                        <span className="text-xs font-medium w-8 text-right">{topic.precision}%</span>
                                     </div>
                                 ))}
                                 {item.precision < 70 && (
-                                    <div className="mt-4 p-3 bg-orange-500/5 border border-orange-500/10 rounded-xl flex items-center gap-3">
-                                        <AlertCircle className="w-4 h-4 text-orange-500" />
-                                        <p className="text-[9px] font-bold text-orange-500 uppercase tracking-widest">Alerta: Foco necessário nesta disciplina</p>
+                                    <div className="flex items-center gap-2 text-orange-500 text-xs mt-2 pl-4">
+                                        <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                                        Foco necessário nesta disciplina
                                     </div>
                                 )}
                             </div>
                         )}
                     </div>
                 ))}
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     )
 }

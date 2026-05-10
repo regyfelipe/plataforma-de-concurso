@@ -1,60 +1,65 @@
 "use client"
 
-import { ArrowUp, Target, BarChart3 } from "lucide-react"
+import { ArrowUp } from "lucide-react"
 import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
+import { Card } from "@workspace/ui/components/card"
+import {
+    Table, TableBody, TableCell,
+    TableHead, TableHeader, TableRow,
+} from "@workspace/ui/components/table"
 
 interface RankingTableProps {
     data: any[]
 }
 
 export function RankingTable({ data }: RankingTableProps) {
-    const tableData = data.slice(3); // Mostra do 4º lugar em diante
+    const tableData = data.slice(3)
 
     return (
-        <div className="bg-card dark:bg-muted/10 border border-border/40 rounded-[2rem] overflow-hidden shadow-sm">
-            <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="border-b border-border/20 bg-muted/5">
-                            <th className="p-6 text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">Posição</th>
-                            <th className="p-6 text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">Estudante</th>
-                            <th className="p-6 text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 text-center">Precisão</th>
-                            <th className="p-6 text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 text-right">Pontuação</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {tableData.map((user: any) => (
-                            <tr 
-                                key={user.rank} 
-                                className={`group hover:bg-muted/10 transition-colors border-b border-border/10 last:border-0 ${user.isCurrentUser ? 'bg-primary/5' : ''}`}
-                            >
-                                <td className="p-6">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-sm font-black text-foreground">{user.rank}º</span>
-                                        {user.trend === 'up' && <ArrowUp className="w-3 h-3 text-emerald-500" />}
-                                    </div>
-                                </td>
-                                <td className="p-6">
-                                    <div className="flex items-center gap-3">
-                                        <Avatar className="w-8 h-8 border border-border/40">
-                                            <AvatarFallback className="text-[10px] font-black">{user.avatar}</AvatarFallback>
-                                        </Avatar>
-                                        <p className={`text-sm font-black text-foreground ${user.isCurrentUser ? 'text-primary' : ''}`}>
-                                            {user.name} {user.isCurrentUser && "(Você)"}
-                                        </p>
-                                    </div>
-                                </td>
-                                <td className="p-6 text-center">
-                                    <span className="text-sm font-bold text-foreground/70">{user.precision}%</span>
-                                </td>
-                                <td className="p-6 text-right">
-                                    <span className="text-sm font-black text-foreground tabular-nums">{user.points.toLocaleString()} pts</span>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+        <Card>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead className="w-16">Posição</TableHead>
+                        <TableHead>Estudante</TableHead>
+                        <TableHead className="text-center">Precisão</TableHead>
+                        <TableHead className="text-right">Pontuação</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {tableData.map((user: any) => (
+                        <TableRow
+                            key={user.rank}
+                            className={user.isCurrentUser ? "bg-primary/5" : ""}
+                        >
+                            <TableCell>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-sm font-medium">{user.rank}º</span>
+                                    {user.trend === "up" && (
+                                        <ArrowUp className="h-3 w-3 text-emerald-500" />
+                                    )}
+                                </div>
+                            </TableCell>
+                            <TableCell>
+                                <div className="flex items-center gap-3">
+                                    <Avatar className="h-8 w-8">
+                                        <AvatarFallback className="text-xs">{user.avatar}</AvatarFallback>
+                                    </Avatar>
+                                    <span className={`text-sm font-medium ${user.isCurrentUser ? "text-primary" : ""}`}>
+                                        {user.name} {user.isCurrentUser && "(Você)"}
+                                    </span>
+                                </div>
+                            </TableCell>
+                            <TableCell className="text-center text-sm text-muted-foreground">
+                                {user.precision}%
+                            </TableCell>
+                            <TableCell className="text-right text-sm font-medium tabular-nums">
+                                {user.points.toLocaleString()} pts
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </Card>
     )
 }

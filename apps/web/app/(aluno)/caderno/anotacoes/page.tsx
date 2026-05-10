@@ -22,17 +22,14 @@ export default function AnotacoesPage() {
     }
 
     return (
-        <div className="flex-1 space-y-8 p-8 pt-6 animate-in fade-in duration-700 bg-background min-h-[100vh] rounded-xl md:min-h-min mx-auto w-full">
-            
-            {/* Header */}
-            <div className="flex flex-wrap items-end justify-between gap-6">
-                <div className="space-y-1">
-                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-primary/60">Base de Conhecimento</p>
-                    <h1 className="text-3xl font-black tracking-tighter text-foreground">
-                        Minhas Anotações
-                    </h1>
-                </div>
+        <div className="flex-1 space-y-8 p-8 pt-6">
 
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-semibold tracking-tight">Minhas Anotações</h1>
+                    <p className="text-sm text-muted-foreground">Base de conhecimento pessoal</p>
+                </div>
                 <NoteCreateModal onSave={handleSaveNote} />
             </div>
 
@@ -41,18 +38,17 @@ export default function AnotacoesPage() {
             {/* Grid de Anotações */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {notes.map((note) => (
-                    <NoteCard 
-                        key={note.id} 
-                        note={note} 
-                        onOpen={setViewingNote} 
+                    <NoteCard
+                        key={note.id}
+                        note={note}
+                        onOpen={setViewingNote}
                     />
                 ))}
             </div>
 
-            {/* Modal de Visualização */}
-            <NoteViewModal 
-                note={viewingNote} 
-                onClose={() => setViewingNote(null)} 
+            <NoteViewModal
+                note={viewingNote}
+                onClose={() => setViewingNote(null)}
             />
         </div>
     )

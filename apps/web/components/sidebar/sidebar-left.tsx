@@ -58,8 +58,8 @@ import {
 
 const data = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
+    name: "Felipe",
+    email: "lliper@concurso.com",
     avatar: "/avatars/shadcn.jpg",
   }
 }
@@ -80,7 +80,7 @@ const navPrincipais = [
       { title: "Resolver Questões", url: "/questoes/resolver" },
       { title: "Questões Favoritas", url: "/questoes/favoritas" },
       { title: "Questões Erradas", url: "/questoes/erradas" },
-      { title: "Histórico", url: "/questoes/historico" },
+      // { title: "Histórico", url: "/questoes/historico" },
       { title: "Comentadas", url: "/questoes/comentadas" },
     ],
   },
@@ -100,20 +100,20 @@ const navPrincipais = [
     icon: IconTrophy,
     items: [
       { title: "Geral", url: "/rankings/geral" },
-      { title: "Semanal", url: "/rankings/semanal" },
+      // { title: "Semanal", url: "/rankings/semanal" },
       { title: "Por Concurso", url: "/rankings/por-concurso" },
     ],
   },
   {
     title: "Estatísticas",
-    url: "#",
+    url: "/estatisticas/desempenho",
     icon: IconChartBar,
-    items: [
-      { title: "Desempenho", url: "/estatisticas/desempenho" },
-      { title: "Taxa de Acerto", url: "/estatisticas/taxa-acerto" },
-      { title: "Evolução", url: "/estatisticas/evolucao" },
-      { title: "Tempo de Estudo", url: "/estatisticas/tempo-estudo" },
-    ],
+    // items: [
+    //   { title: "Desempenho", url: "/estatisticas/desempenho" },
+    //   { title: "Taxa de Acerto", url: "/estatisticas/taxa-acerto" },
+    //   { title: "Evolução", url: "/estatisticas/evolucao" },
+    //   { title: "Tempo de Estudo", url: "/estatisticas/tempo-estudo" },
+    // ],
   },
   {
     title: "Suporte",
@@ -237,13 +237,17 @@ const navAdmin = [
     items: [
       { title: "Listar Cadernos", url: "/admin/cadernos" },
       { title: "Criar Caderno", url: "/admin/cadernos/criar" },
-      { title: "Editar Caderno", url: "/admin/cadernos/editar" },
+      // { title: "Editar Caderno", url: "/admin/cadernos/editar" },
       { title: "Compartilhados", url: "/admin/cadernos/compartilhados" },
     ],
   },
 ]
 
-export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
+type AppSidebarProps = ComponentProps<typeof Sidebar> & {
+  showAdmin?: boolean
+}
+
+export function AppSidebar({ showAdmin = false, ...props }: AppSidebarProps) {
   const { variant, collapsible, side } = useLayout()
 
   return (
@@ -278,16 +282,18 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Administração</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navAdmin.map((item) => (
-                <NavCollapsibleItem key={item.title} item={item} />
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {showAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Administração</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {navAdmin.map((item) => (
+                  <NavCollapsibleItem key={item.title} item={item} />
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />

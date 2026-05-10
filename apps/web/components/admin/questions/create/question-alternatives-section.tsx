@@ -1,62 +1,80 @@
 "use client"
 
-import { Plus, Trash2 } from "lucide-react"
+import { Trash2 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { Card, CardContent } from "@workspace/ui/components/card"
+import { cn } from "@workspace/ui/lib/utils"
 
 interface Alternative {
-    id: string;
-    letter: string;
-    text: string;
-    isCorrect: boolean;
+    id: string
+    letter: string
+    text: string
+    isCorrect: boolean
 }
 
 interface QuestionAlternativesSectionProps {
-    alternativas: Alternative[];
-    onToggleCorrect: (id: string) => void;
-    onChangeText: (id: string, text: string) => void;
-    onRemove: (id: string) => void;
-    canRemove: boolean;
+    alternativas: Alternative[]
+    onToggleCorrect: (id: string) => void
+    onChangeText: (id: string, text: string) => void
+    onRemove: (id: string) => void
+    canRemove: boolean
 }
 
-export function QuestionAlternativesSection({ alternativas, onToggleCorrect, onChangeText, onRemove, canRemove }: QuestionAlternativesSectionProps) {
+export function QuestionAlternativesSection({
+    alternativas,
+    onToggleCorrect,
+    onChangeText,
+    onRemove,
+    canRemove,
+}: QuestionAlternativesSectionProps) {
     return (
         <section className="space-y-4">
-            <div className="flex items-center justify-between px-1">
-                <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-md bg-muted/10 flex items-center justify-center border">
-                        <span className="text-[10px] font-black">3</span>
-                    </div>
-                    <h2 className="text-xs font-black uppercase tracking-widest text-foreground/70">Alternativas</h2>
+            <div className="flex items-center gap-2 px-1">
+                <div className="h-6 w-6 rounded-md border bg-muted flex items-center justify-center">
+                    <span className="text-xs font-medium">3</span>
                 </div>
+                <h2 className="text-sm font-medium text-muted-foreground">Alternativas</h2>
             </div>
-            <Card className="rounded-xl border shadow-none bg-muted/5">
-                <CardContent className="p-6 space-y-4">
+            <Card>
+                <CardContent className="p-6 space-y-3">
                     {alternativas.map((alt) => (
-                        <div key={alt.id} className="flex gap-4">
-                            <button 
+                        <div key={alt.id} className="flex gap-3">
+                            {/* Letra / toggle gabarito */}
+                            <button
                                 type="button"
                                 onClick={() => onToggleCorrect(alt.id)}
-                                className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center font-black text-[11px] border transition-all ${alt.isCorrect ? 'bg-foreground text-background border-foreground shadow-lg shadow-foreground/10' : 'bg-background border-border hover:border-foreground/20'}`}
+                                className={cn(
+                                    "shrink-0 h-9 w-9 rounded-md border flex items-center justify-center text-sm font-semibold transition-colors",
+                                    alt.isCorrect
+                                        ? "bg-foreground text-background border-foreground"
+                                        : "bg-background hover:border-foreground/30"
+                                )}
                             >
                                 {alt.letter}
                             </button>
-                            <div className="flex-1 relative">
-                                <Textarea 
+
+                            {/* Textarea + botão remover */}
+                            <div className="relative flex-1">
+                                <Textarea
                                     value={alt.text}
                                     onChange={(e) => onChangeText(alt.id, e.target.value)}
-                                    className={`min-h-[60px] rounded-lg text-xs resize-none py-3 bg-background ${alt.isCorrect ? 'border-foreground/20' : 'border-border/50'}`} 
-                                    placeholder={`Texto da alternativa ${alt.letter}...`} 
+                                    placeholder={`Texto da alternativa ${alt.letter}...`}
+                                    className={cn(
+                                        "min-h-[60px] resize-none pr-8 text-sm",
+                                        alt.isCorrect && "border-foreground/30"
+                                    )}
                                 />
                                 {canRemove && (
-                                    <button 
+                                    <Button
                                         type="button"
+                                        variant="ghost"
+                                        size="icon"
                                         onClick={() => onRemove(alt.id)}
-                                        className="absolute top-3 right-3 text-muted-foreground/30 hover:text-red-500 transition-colors"
+                                        className="absolute top-1.5 right-1.5 h-6 w-6 text-muted-foreground hover:text-destructive"
                                     >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
                                 )}
                             </div>
                         </div>

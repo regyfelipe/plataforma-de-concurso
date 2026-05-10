@@ -1,6 +1,8 @@
 "use client"
 
 import { ArrowUpRight, ArrowDownRight, Minus } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card"
+import { Button } from "@workspace/ui/components/button"
 
 interface DisciplinePerformanceListProps {
     disciplines: {
@@ -11,46 +13,46 @@ interface DisciplinePerformanceListProps {
     }[]
 }
 
+const TREND_ICON = {
+    up:   <ArrowUpRight className="h-3.5 w-3.5 text-emerald-500" />,
+    down: <ArrowDownRight className="h-3.5 w-3.5 text-destructive" />,
+    flat: <Minus className="h-3.5 w-3.5 text-muted-foreground" />,
+}
+
+const PRECISION_COLOR = (p: number) =>
+    p >= 80 ? "bg-emerald-500" : p >= 60 ? "bg-primary" : "bg-orange-500"
+
 export function DisciplinePerformanceList({ disciplines }: DisciplinePerformanceListProps) {
     return (
-        <div className="bg-card dark:bg-muted/10 border border-border/40 rounded-[2rem] p-8 space-y-6 shadow-sm">
-            <div className="flex items-center justify-between">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40">Performance por Disciplina</p>
-                <div className="flex items-center gap-2 text-[9px] font-black uppercase text-primary tracking-widest cursor-pointer hover:underline">
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Performance por Disciplina</CardTitle>
+                <Button variant="ghost" size="sm" className="text-xs text-primary h-7">
                     Ver Detalhes
-                </div>
-            </div>
-
-            <div className="space-y-6">
+                </Button>
+            </CardHeader>
+            <CardContent className="space-y-5">
                 {disciplines.map((item) => (
-                    <div key={item.name} className="space-y-2 group">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm font-black text-foreground group-hover:text-primary transition-colors">{item.name}</span>
-                                {item.trend === 'up' ? (
-                                    <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500" />
-                                ) : item.trend === 'down' ? (
-                                    <ArrowDownRight className="w-3.5 h-3.5 text-red-500" />
-                                ) : (
-                                    <Minus className="w-3.5 h-3.5 text-muted-foreground/30" />
-                                )}
+                    <div key={item.name} className="space-y-1.5">
+                        <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-1.5 font-medium">
+                                {item.name}
+                                {TREND_ICON[item.trend as keyof typeof TREND_ICON] ?? TREND_ICON.flat}
                             </div>
                             <div className="text-right">
-                                <span className="text-sm font-black text-foreground">{item.precision}%</span>
-                                <p className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest">{item.solved} Questões</p>
+                                <span className="font-semibold">{item.precision}%</span>
+                                <p className="text-xs text-muted-foreground">{item.solved} questões</p>
                             </div>
                         </div>
-                        <div className="h-1.5 w-full bg-muted/20 rounded-full overflow-hidden">
-                            <div 
-                                className={`h-full rounded-full transition-all duration-1000 ${
-                                    item.precision >= 80 ? 'bg-emerald-500' : item.precision >= 60 ? 'bg-primary' : 'bg-orange-500'
-                                }`} 
-                                style={{ width: `${item.precision}%` }} 
+                        <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                            <div
+                                className={`h-full rounded-full transition-all duration-700 ${PRECISION_COLOR(item.precision)}`}
+                                style={{ width: `${item.precision}%` }}
                             />
                         </div>
                     </div>
                 ))}
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     )
 }

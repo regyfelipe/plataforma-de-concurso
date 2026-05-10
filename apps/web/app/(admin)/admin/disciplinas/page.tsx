@@ -1,169 +1,22 @@
-"use client"
+import { TaxonomyList } from "@/components/admin/taxonomy-list"
+import { prisma } from "@workspace/database"
 
-import * as React from "react"
-import { Plus, Search, Filter, Edit2, Trash2, BookOpen, MoreHorizontal, CheckCircle2, XCircle } from "lucide-react"
-import Link from "next/link"
-import { Button } from "@workspace/ui/components/button"
-import { Badge } from "@workspace/ui/components/badge"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@workspace/ui/components/table"
-import { Input } from "@workspace/ui/components/input"
-import { DISCIPLINAS_MOCK } from "@/data/mocks/admin"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@workspace/ui/components/alert-dialog"
-import { AlertTriangle } from "lucide-react"
+export default async function DisciplinasPage() {
+  const disciplinas = await prisma.disciplina.findMany({ orderBy: { nome: "asc" } })
 
-export default function ListarDisciplinasPage() {
-    return (
-        <div className="flex-1 space-y-8 p-8 pt-6 animate-in fade-in duration-700 bg-background min-h-[100vh]">
-
-            {/* Header Master */}
-            <div className="flex flex-wrap items-end justify-between gap-6">
-                <div className="space-y-1">
-                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-primary">Gestão de Conteúdo</p>
-                    <h1 className="text-3xl font-black tracking-tighter text-foreground">
-                        Disciplinas
-                    </h1>
-                </div>
-
-                <Link href="/admin/disciplinas/criar">
-                    <Button className="h-11 px-6 rounded-xl bg-primary text-primary-foreground font-black text-[10px] uppercase tracking-widest hover:opacity-90 transition-all gap-2 shadow-lg shadow-primary/20">
-                        <Plus className="w-4 h-4" />
-                        Nova Disciplina
-                    </Button>
-                </Link>
-            </div>
-
-            {/* Barra de Ações */}
-            <div className="bg-card dark:bg-muted/10 border border-border/40 rounded-[2rem] p-8 space-y-6 shadow-sm">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="relative flex-1 max-w-md">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40" />
-                        <Input
-                            placeholder="Buscar por nome ou sigla..."
-                            className="pl-10 h-11 bg-muted/20 border-border/40 rounded-xl focus-visible:ring-primary/20"
-                        />
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <div className="px-4 py-2 bg-muted/10 border border-border/40 rounded-xl flex items-center gap-3">
-                            <p className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest">Total</p>
-                            <p className="text-sm font-black text-foreground">{DISCIPLINAS_MOCK.length}</p>
-                        </div>
-                        <Button variant="outline" className="h-11 rounded-xl border-border/40 gap-2 text-[10px] font-black uppercase tracking-widest">
-                            <Filter className="w-4 h-4 text-muted-foreground/40" />
-                            Filtrar Status
-                        </Button>
-                    </div>
-                </div>
-
-                {/* Tabela de Disciplinas */}
-                <div className="border border-border/40 rounded-2xl overflow-hidden">
-                    <Table>
-                        <TableHeader className="bg-muted/20">
-                            <TableRow className="hover:bg-transparent border-border/40">
-                                <TableHead className="py-4 px-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Sigla</TableHead>
-                                <TableHead className="py-4 px-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Disciplina</TableHead>
-                                <TableHead className="py-4 px-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Questões</TableHead>
-                                <TableHead className="py-4 px-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Status</TableHead>
-                                <TableHead className="py-4 px-6 text-right"></TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {DISCIPLINAS_MOCK.map((item: any) => (
-                                <TableRow key={item.id} className="group border-border/40 hover:bg-muted/10 transition-colors">
-                                    <TableCell className="py-5 px-6">
-                                        <Badge variant="outline" className="font-mono text-[10px] font-black px-3 py-1 border-primary/20 bg-primary/5 text-primary rounded-lg uppercase tracking-tight">
-                                            {item.code}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="py-5 px-6">
-                                        <div className="space-y-0.5">
-                                            <p className="text-xs font-black text-foreground">{item.name}</p>
-                                            <p className="text-[10px] font-medium text-muted-foreground/60 line-clamp-1 max-w-[300px]">
-                                                {item.description}
-                                            </p>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="py-5 px-6">
-                                        <div className="flex items-center gap-2">
-                                            <BookOpen className="w-3.5 h-3.5 text-muted-foreground/40" />
-                                            <span className="text-xs font-bold text-muted-foreground">{item.questions.toLocaleString()}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="py-5 px-6">
-                                        <div className="flex items-center gap-1.5">
-                                            {item.status === 'active' ? (
-                                                <Badge variant="outline" className="gap-1.5 px-3 py-1 border-emerald-500/20 bg-emerald-500/5 text-emerald-600 text-[9px] font-black uppercase tracking-wider rounded-full">
-                                                    <div className="w-1 h-1 rounded-full bg-emerald-500" />
-                                                    Ativo
-                                                </Badge>
-                                            ) : (
-                                                <Badge variant="outline" className="gap-1.5 px-3 py-1 border-muted-foreground/20 bg-muted/5 text-muted-foreground/60 text-[9px] font-black uppercase tracking-wider rounded-full">
-                                                    <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
-                                                    Inativo
-                                                </Badge>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="py-5 px-6 text-right">
-                                        <div className="flex items-center justify-end gap-2">
-                                            <Link href={`/admin/disciplinas/editar/${item.id}`}>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors">
-                                                    <Edit2 className="w-3.5 h-3.5" />
-                                                </Button>
-                                            </Link>
-
-                                            <AlertDialog>
-                                                <AlertDialogTrigger render={
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors">
-                                                        <Trash2 className="w-3.5 h-3.5" />
-                                                    </Button>
-                                                } />
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <div className="flex items-center gap-3 mb-2">
-                                                            <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center text-destructive">
-                                                                <AlertTriangle className="w-5 h-5" />
-                                                            </div>
-                                                            <AlertDialogTitle className="font-black text-xl tracking-tighter">Excluir Disciplina?</AlertDialogTitle>
-                                                        </div>
-                                                        <AlertDialogDescription className="text-sm text-muted-foreground leading-relaxed">
-                                                            Você está prestes a excluir a disciplina <strong className="text-foreground">{item.name}</strong>.
-                                                            Esta ação não pode ser desfeita e pode afetar questões vinculadas a ela.
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter className="gap-3 mt-4">
-                                                        <AlertDialogCancel className="rounded-xl font-black text-[10px] uppercase tracking-widest h-11 px-6">Cancelar</AlertDialogCancel>
-                                                        <AlertDialogAction className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 font-black text-[10px] uppercase tracking-widest h-11 px-6">
-                                                            Confirmar Exclusão
-                                                        </AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-            </div>
-        </div>
-    )
+  return (
+    <TaxonomyList
+      title="Disciplinas"
+      description="Gestão de Conteúdo"
+      createHref="/admin/disciplinas/criar"
+      createLabel="Criar Disciplina"
+      items={disciplinas.map((item) => ({
+        id: item.id,
+        title: item.nome,
+        subtitle: item.descricao || undefined,
+        meta: item.code,
+        active: item.ativo,
+      }))}
+    />
+  )
 }
