@@ -115,7 +115,7 @@ export function CreateAssuntoForm({
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold flex items-center gap-2">
                     <Bookmark className="w-3.5 h-3.5 text-muted-foreground" />
-                    Nome do Assunto / Item
+                    Nome do Assunto
                   </Label>
 
                   <Input

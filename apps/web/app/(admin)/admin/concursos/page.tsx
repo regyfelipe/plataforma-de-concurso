@@ -1,29 +1,55 @@
-import { TaxonomyList } from "@/components/admin/taxonomy-list"
 import { prisma } from "@workspace/database"
+import { deleteConcurso } from "@/actions/admin-taxonomy"
+import { ConcursosList } from "./concursos-list"
+import { CreateConcursoModal } from "./create-concurso-modal"
 
 export default async function ConcursosPage() {
-  const concursos = await prisma.concurso.findMany({
-    include: {
-      banca: true,
-      carreira: true,
-      nivel: true,
-    },
-    orderBy: { criadoEm: "desc" },
-  })
+    const [concursos, bancas, carreiras, niveis] = await Promise.all([
+        prisma.concurso.findMany({
+            orderBy: { criadoEm: "desc" },
+            include: {
+                banca: true,
+                carreira: true,
+                nivel: true,
+                _count: {
+                    select: { questoes: true }
+                }
+            }
+        }),
+        prisma.banca.findMany({ where: { ativo: true }, orderBy: { sigla: "asc" } }),
+        prisma.carreira.findMany({ where: { ativo: true }, orderBy: { nome: "asc" } }),
+        prisma.nivelEducacional.findMany({ where: { ativo: true }, orderBy: { nome: "asc" } }),
+    ])
 
-  return (
-    <TaxonomyList
-      title="Concursos"
-      description="Gestão de Certames"
-      createHref="/admin/concursos/criar"
-      createLabel="Criar Concurso"
-      items={concursos.map((item) => ({
+    const items = concursos.map((item) => ({
         id: item.id,
-        title: item.nome,
-        subtitle: [item.banca?.sigla, item.carreira?.nome, item.nivel?.nome].filter(Boolean).join(" · "),
-        meta: item.ano ? String(item.ano) : item.status,
+        nome: item.nome,
+        banca: item.banca?.sigla,
+        carreira: item.carreira?.nome,
+        nivel: item.nivel?.nome,
+        ano: item.ano || undefined,
+        status: item.status,
         active: item.ativo,
-      }))}
-    />
-  )
+        questionsCount: item._count.questoes,
+        editHref: `/admin/concursos/editar/${item.id}`,
+    }))
+
+    async function handleDelete(id: string) {
+        "use server"
+        await deleteConcurso(id)
+    }
+
+    return (
+        <ConcursosList
+            items={items}
+            createAction={
+                <CreateConcursoModal 
+                    bancas={bancas.map(b => ({ id: b.id, nome: b.nome, sigla: b.sigla }))} 
+                    carreiras={carreiras.map(c => ({ id: c.id, nome: c.nome }))}
+                    niveis={niveis.map(n => ({ id: n.id, nome: n.nome }))}
+                />
+            }
+            onDelete={handleDelete}
+        />
+    )
 }

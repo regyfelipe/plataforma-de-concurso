@@ -4,6 +4,7 @@ import { getSession } from "@workspace/auth"
 import { prisma } from "@workspace/database"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
+import { revalidatePath } from "next/cache"
 
 function str(formData: FormData, key: string) {
   const value = formData.get(key)
@@ -193,3 +194,168 @@ export async function createSubtopico(formData: FormData) {
 
   redirect("/admin/assuntos")
 }
+
+export async function deleteDisciplina(id: string) {
+  await requireAdmin()
+  await prisma.disciplina.delete({ where: { id } })
+  redirect("/admin/disciplinas")
+}
+
+export async function deleteAssunto(id: string) {
+  await requireAdmin()
+  await prisma.assunto.delete({ where: { id } })
+  redirect("/admin/assuntos")
+}
+
+export async function deleteTopico(id: string) {
+  await requireAdmin()
+  await prisma.topico.delete({ where: { id } })
+  redirect("/admin/assuntos")
+}
+
+export async function deleteSubtopico(id: string) {
+  await requireAdmin()
+  await prisma.subtopico.delete({ where: { id } })
+  redirect("/admin/assuntos")
+}
+
+export async function createTopicoInline(assuntoId: string, nome: string) {
+  await requireAdmin()
+  await prisma.topico.create({ data: { assuntoId, nome, ativo: true } })
+  revalidatePath("/admin/assuntos")
+}
+
+export async function createSubtopicoInline(topicoId: string, nome: string) {
+  await requireAdmin()
+  await prisma.subtopico.create({ data: { topicoId, nome, ativo: true } })
+  revalidatePath("/admin/assuntos")
+  revalidatePath("/admin/disciplinas")
+}
+
+export async function createDisciplinaInline(nome: string, code: string) {
+  await requireAdmin()
+  await prisma.disciplina.create({
+    data: {
+      nome,
+      code: code.toUpperCase(),
+      ativo: true
+    }
+  })
+  revalidatePath("/admin/disciplinas")
+}
+
+export async function createAssuntoInline(disciplinaId: string, nome: string) {
+  await requireAdmin()
+  await prisma.assunto.create({
+    data: {
+      disciplinaId,
+      nome,
+      ativo: true
+    }
+  })
+  revalidatePath("/admin/disciplinas")
+  revalidatePath("/admin/assuntos")
+}
+
+export async function createCarreiraInline(nome: string, descricao?: string) {
+  await requireAdmin()
+  await prisma.carreira.create({
+    data: {
+      nome,
+      descricao: descricao || null,
+      ativo: true
+    }
+  })
+  revalidatePath("/admin/carreiras")
+}
+
+export async function deleteCarreira(id: string) {
+  await requireAdmin()
+  await prisma.carreira.delete({ where: { id } })
+  revalidatePath("/admin/carreiras")
+}
+
+export async function createDificuldadeInline(nome: string, slug: string) {
+  await requireAdmin()
+  await prisma.dificuldade.create({
+    data: {
+      nome,
+      slug: slug.toLowerCase(),
+      ativo: true
+    }
+  })
+  revalidatePath("/admin/dificuldade")
+}
+
+export async function deleteDificuldade(id: string) {
+  await requireAdmin()
+  await prisma.dificuldade.delete({ where: { id } })
+  revalidatePath("/admin/dificuldade")
+}
+
+export async function createBancaInline(nome: string, sigla: string, descricao?: string) {
+  await requireAdmin()
+  await prisma.banca.create({
+    data: {
+      nome,
+      sigla: sigla.toUpperCase(),
+      descricao: descricao || null,
+      ativo: true
+    }
+  })
+  revalidatePath("/admin/bancas")
+}
+
+export async function deleteBanca(id: string) {
+  await requireAdmin()
+  await prisma.banca.delete({ where: { id } })
+  revalidatePath("/admin/bancas")
+}
+
+export async function createConcursoInline(data: {
+  nome: string
+  bancaId?: string
+  carreiraId?: string
+  nivelId?: string
+  ano?: number
+  status: "aberto" | "previsto" | "encerrado"
+}) {
+  await requireAdmin()
+  await prisma.concurso.create({
+    data: {
+      ...data,
+      ativo: true
+    }
+  })
+  revalidatePath("/admin/concursos")
+}
+
+export async function deleteConcurso(id: string) {
+  await requireAdmin()
+  await prisma.concurso.delete({ where: { id } })
+  revalidatePath("/admin/concursos")
+}
+
+export async function createTipoQuestaoInline(nome: string, slug: string) {
+  await requireAdmin()
+  await prisma.tipoQuestao.create({
+    data: {
+      nome,
+      slug: slug.toLowerCase(),
+      ativo: true
+    }
+  })
+  revalidatePath("/admin/tipos-questao")
+}
+
+export async function deleteTipoQuestao(id: string) {
+  await requireAdmin()
+  await prisma.tipoQuestao.delete({ where: { id } })
+  revalidatePath("/admin/tipos-questao")
+}
+
+
+
+
+
+

@@ -4,11 +4,15 @@ import { getSession } from "@workspace/auth"
 import { prisma } from "@workspace/database"
 import { AdminLayoutClient } from "@/components/layout/admin-layout-client"
 
-export default async function AdminLayout({
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  return <AdminLayoutGate>{children}</AdminLayoutGate>
+}
+
+async function AdminLayoutGate({ children }: { children: React.ReactNode }) {
   const session = await getSession(await headers())
 
   if (!session?.user?.id) {

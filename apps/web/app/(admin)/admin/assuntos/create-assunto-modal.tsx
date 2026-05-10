@@ -51,7 +51,7 @@ export function CreateAssuntoModal({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger 
         render={
-          <Button className="shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform">
+          <Button type="submit" size="sm"  className="shadow-lg hover:scale-[1.02] transition-transform">
             <Plus className="mr-2 h-4 w-4" />
             Criar Assunto
           </Button>
