@@ -1,5 +1,6 @@
 "use client"
 
+import { sanitizeHtml } from "@/lib/sanitize-html"
 import { CheckCircle2, X } from "lucide-react"
 
 interface Alternative {
@@ -107,7 +108,7 @@ export function QuestionAlternatives({
                                 className={`leading-tight transition-colors ${smallText ? 'text-[13px]' : 'text-base'} ${
                                     isExcluded ? "line-through opacity-50" : ""
                                 } break-words whitespace-normal flex-1`}
-                                dangerouslySetInnerHTML={{ __html: alt.text }}
+                                dangerouslySetInnerHTML={{ __html: sanitizeHtml(alt.text) }}
                             />
                         </div>
                     </div>

@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
+import { sanitizeHtml } from "@/lib/sanitize-html"
 import { BookOpen, ListChecks, FileText, Info, CheckCircle2 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 
@@ -23,6 +24,7 @@ interface QuestionExplanationProps {
 
 export function QuestionExplanation({ resolution, objectives, references, alternatives, show }: QuestionExplanationProps) {
     const [activeTab, setActiveTab] = useState<"resolution" | "alternatives" | "academic">("resolution")
+    const safeResolution = useMemo(() => sanitizeHtml(resolution), [resolution])
 
     if (!show) return null
 
@@ -63,11 +65,11 @@ export function QuestionExplanation({ resolution, objectives, references, altern
             <div className="mt-2">
                 {activeTab === "resolution" && (
                     <div className="space-y-4 animate-in fade-in duration-300">
-                        {resolution ? (
+                        {safeResolution ? (
                             <div className="bg-primary/5 p-6 rounded-2xl border border-primary/20">
                                 <div 
                                     className="prose dark:prose-invert max-w-none text-base leading-relaxed text-foreground/80 font-medium"
-                                    dangerouslySetInnerHTML={{ __html: resolution }}
+                                    dangerouslySetInnerHTML={{ __html: safeResolution }}
                                 />
                             </div>
                         ) : (
@@ -103,13 +105,13 @@ export function QuestionExplanation({ resolution, objectives, references, altern
                                 <div className="ml-9 space-y-3">
                                     <div 
                                         className="text-sm text-foreground/80 italic line-clamp-1 opacity-60"
-                                        dangerouslySetInnerHTML={{ __html: alt.text }}
+                                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(alt.text) }}
                                     />
 
                                     {alt.explanation ? (
                                         <div className="flex gap-2 text-sm text-foreground/90 leading-relaxed font-medium">
                                             <Info className="w-4 h-4 mt-0.5 shrink-0 text-primary/60" />
-                                            <div dangerouslySetInnerHTML={{ __html: alt.explanation }} />
+                                            <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(alt.explanation) }} />
                                         </div>
                                     ) : (
                                         <p className="text-xs text-muted-foreground italic">Sem justificativa detalhada.</p>

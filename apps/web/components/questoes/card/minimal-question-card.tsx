@@ -1,14 +1,15 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent } from "@workspace/ui/components/card"
+import { useCallback, useMemo, useState, type MouseEvent } from "react"
 import { Button } from "@workspace/ui/components/button"
 import { toast } from "sonner"
+import { sanitizeHtml } from "@/lib/sanitize-html"
+import { submitQuestionAnswer } from "@/actions/question-progress"
 import { QuestionAlternatives } from "./question-alternatives"
-import { QuestionExplanation } from "./question-explanation"
-import { CheckCircle2, AlertCircle, MessageSquare } from "lucide-react"
+import { CheckCircle2, AlertCircle } from "lucide-react"
 
 interface Alternative {
+    id?: string
     letter: string
     text: string
     isCorrect: boolean
@@ -31,35 +32,57 @@ interface MinimalQuestionCardProps {
     }
 }
 
+const excludedOptions: string[] = []
+
 export function MinimalQuestionCard({ question }: MinimalQuestionCardProps) {
     const [selectedOption, setSelectedOption] = useState<string | null>(null)
     const [isSubmitted, setIsSubmitted] = useState(false)
-    const [excludedOptions, setExcludedOptions] = useState<string[]>([])
+    const [isSavingAnswer, setIsSavingAnswer] = useState(false)
 
-    const handleOptionSelect = (letter: string) => {
-        if (!isSubmitted && !excludedOptions.includes(letter)) {
+    const supportHtml = useMemo(() => sanitizeHtml(question.supportText), [question.supportText])
+    const questionHtml = useMemo(() => sanitizeHtml(question.questionText), [question.questionText])
+    const resolutionHtml = useMemo(() => sanitizeHtml(question.resolution), [question.resolution])
+    const correctAnswer = useMemo(
+        () => question.alternatives.find((alternative) => alternative.isCorrect),
+        [question.alternatives]
+    )
+    const isCorrect = selectedOption === correctAnswer?.letter
+
+    const handleOptionSelect = useCallback((letter: string) => {
+        if (!isSubmitted) {
             setSelectedOption(prev => prev === letter ? null : letter)
         }
-    }
+    }, [isSubmitted])
 
-    const toggleExcludeOption = (e: React.MouseEvent, letter: string) => {
-        e.stopPropagation()
-        if (isSubmitted) return
-        setExcludedOptions(prev =>
-            prev.includes(letter) ? prev.filter(l => l !== letter) : [...prev, letter]
-        )
-        if (selectedOption === letter) setSelectedOption(null)
-    }
+    const toggleExcludeOption = useCallback((event: MouseEvent) => {
+        event.stopPropagation()
+    }, [])
 
-    const handleSubmit = () => {
+    const handleSubmit = useCallback(async () => {
+        const selectedAlternative = question.alternatives.find((alternative) => alternative.letter === selectedOption)
+
+        if (selectedAlternative?.id) {
+            setIsSavingAnswer(true)
+            try {
+                const result = await submitQuestionAnswer({
+                    questionId: question.id,
+                    alternativeId: selectedAlternative.id,
+                })
+                setIsSubmitted(true)
+                toast.success(result.isCorrect ? "Resposta correta!" : "Resposta enviada!")
+            } catch (error) {
+                toast.error(error instanceof Error ? error.message : "Não foi possível salvar sua resposta.")
+            } finally {
+                setIsSavingAnswer(false)
+            }
+            return
+        }
+
         if (selectedOption) {
             setIsSubmitted(true)
             toast.success("Resposta enviada!")
         }
-    }
-
-    const correctAnswer = question.alternatives.find(a => a.isCorrect)
-    const isCorrect = selectedOption === correctAnswer?.letter
+    }, [question.alternatives, question.id, selectedOption])
 
     return (
         <div className="space-y-4">
@@ -69,11 +92,11 @@ export function MinimalQuestionCard({ question }: MinimalQuestionCardProps) {
             </div>
 
             {/* 2. TEXTO DE APOIO (SE TIVER) */}
-            {question.supportText && (
+            {supportHtml && (
                 <div className="pt-2">
                     <div 
                         className="text-[13px] text-foreground/70 leading-relaxed font-medium prose dark:prose-invert max-w-none"
-                        dangerouslySetInnerHTML={{ __html: question.supportText }}
+                        dangerouslySetInnerHTML={{ __html: supportHtml }}
                     />
                 </div>
             )}
@@ -81,7 +104,7 @@ export function MinimalQuestionCard({ question }: MinimalQuestionCardProps) {
             {/* 3. PERGUNTA (ENUNCIADO) - REDUZIDO PARA text-base */}
             <div 
                 className="text-base font-bold leading-relaxed text-foreground/90 tracking-tight"
-                dangerouslySetInnerHTML={{ __html: question.questionText }}
+                dangerouslySetInnerHTML={{ __html: questionHtml }}
             />
 
             {/* 4. ALTERNATIVAS */}
@@ -108,9 +131,9 @@ export function MinimalQuestionCard({ question }: MinimalQuestionCardProps) {
                             : "bg-primary text-primary-foreground hover:scale-[1.01] active:scale-[0.98]"
                     }`}
                     onClick={handleSubmit}
-                    disabled={isSubmitted || !selectedOption}
+                    disabled={isSubmitted || !selectedOption || isSavingAnswer}
                 >
-                    {isSubmitted ? "Respondido" : "Responder"}
+                    {isSubmitted ? "Respondido" : isSavingAnswer ? "Salvando" : "Responder"}
                 </Button>
 
                 {isSubmitted && (
@@ -127,7 +150,7 @@ export function MinimalQuestionCard({ question }: MinimalQuestionCardProps) {
             </div>
 
             {/* 6. COMENTARIO (GABARITO) - MOSTRA AUTOMATICAMENTE AO RESPONDER */}
-            {isSubmitted && question.resolution && (
+            {isSubmitted && resolutionHtml && (
                 <div className="animate-in fade-in slide-in-from-top-2 duration-500 pt-4 border-t border-border/40">
                     <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60">
@@ -135,7 +158,7 @@ export function MinimalQuestionCard({ question }: MinimalQuestionCardProps) {
                         </div>
                         <div 
                             className="prose dark:prose-invert max-w-none text-[13px] leading-snug text-foreground/70 font-medium w-full overflow-hidden break-words whitespace-normal [overflow-wrap:anywhere] [&_*]:max-w-full [&_*]:break-words [&_*]:whitespace-normal"
-                            dangerouslySetInnerHTML={{ __html: question.resolution }}
+                            dangerouslySetInnerHTML={{ __html: resolutionHtml }}
                         />
                     </div>
                 </div>

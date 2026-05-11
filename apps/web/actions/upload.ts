@@ -3,21 +3,33 @@
 import { PutObjectCommand } from "@aws-sdk/client-s3"
 import { s3Client, R2_BUCKET_NAME, R2_PUBLIC_URL } from "@/lib/storage"
 import { generateId } from "better-auth"
+import sharp from "sharp"
 
 type UploadPath = "avatars" | "notebooks" | "careers" | "contests" | "general"
 
-import sharp from "sharp"
+const allowedUploadPaths = new Set<UploadPath>(["avatars", "notebooks", "careers", "contests", "general"])
+const allowedImageTypes = new Set(["image/jpeg", "image/png", "image/webp"])
+const maxUploadSize = 5 * 1024 * 1024
+
+function resolveUploadPath(value: FormDataEntryValue | null): UploadPath {
+  return typeof value === "string" && allowedUploadPaths.has(value as UploadPath)
+    ? (value as UploadPath)
+    : "general"
+}
 
 export async function uploadToR2(formData: FormData) {
   try {
-    const file = formData.get("file") as File
-    const path = (formData.get("path") as UploadPath) || "general"
+    const file = formData.get("file")
+    const path = resolveUploadPath(formData.get("path"))
 
     if (!file || !(file instanceof File)) {
       throw new Error("Arquivo inválido ou não fornecido")
     }
     
     if (!R2_BUCKET_NAME) throw new Error("Bucket R2 não configurado")
+    if (!R2_PUBLIC_URL) throw new Error("URL pública do R2 não configurada")
+    if (!allowedImageTypes.has(file.type)) throw new Error("Tipo de arquivo não permitido")
+    if (file.size > maxUploadSize) throw new Error("Arquivo acima do limite de 5MB")
 
     // Ler os bytes do arquivo
     const arrayBuffer = await file.arrayBuffer()

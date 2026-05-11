@@ -5,6 +5,7 @@ import { Card, CardContent } from "@workspace/ui/components/card"
 import { Badge } from "@workspace/ui/components/badge"
 import { Separator } from "@workspace/ui/components/separator"
 import { cn } from "@workspace/ui/lib/utils"
+import { sanitizeHtml } from "@/lib/sanitize-html"
 
 interface Alternative {
     id: string
@@ -46,14 +47,14 @@ export function QuestionPreview({
                     {supportText && supportText !== "<p></p>" && (
                         <div 
                             className="text-sm text-muted-foreground leading-relaxed tiptap-preview"
-                            dangerouslySetInnerHTML={{ __html: supportText }}
+                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(supportText) }}
                         />
                     )}
 
                     {/* Pergunta */}
                     <div 
                         className="text-base font-medium leading-snug tiptap-preview"
-                        dangerouslySetInnerHTML={{ __html: commandText || "<i>Aguardando enunciado...</i>" }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(commandText) || "<i>Aguardando enunciado...</i>" }}
                     />
 
                     <Separator className="opacity-50" />
@@ -94,7 +95,7 @@ export function QuestionPreview({
                 </div>
             </Card>
 
-            <style jsx global>{`
+            <style>{`
                 .tiptap-preview p {
                     margin-bottom: 0.5rem;
                 }

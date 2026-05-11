@@ -2,11 +2,10 @@
 
 import * as React from "react"
 import { FilterSelect } from "@/components/questoes/filter/filter-select"
-import { Search, Plus, X, Eye, CheckCircle2, ListFilter, MousePointer2, Landmark, BookOpen, Briefcase, Hash, LayoutList, RefreshCcw, ArrowRight } from "lucide-react"
+import { Search, Plus, X, Eye, CheckCircle2, ListFilter, MousePointer2, LayoutList, RefreshCcw, ArrowRight } from "lucide-react"
 import { Input } from "@workspace/ui/components/input"
 import { Button } from "@workspace/ui/components/button"
 import { Badge } from "@workspace/ui/components/badge"
-import { Dialog, DialogContent, DialogTrigger } from "@workspace/ui/components/dialog"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { QuestionStatementSection } from "../questions/create/question-statement-section"
 import { QuestionAlternativesSection } from "../questions/create/question-alternatives-section"
@@ -15,10 +14,10 @@ import { QuestionAlternativeExplanationsSection } from "../questions/create/ques
 import { QuestionMaterialsSection } from "../questions/create/question-materials-section"
 import { Card, CardContent } from "@workspace/ui/components/card"
 import { Separator } from "@workspace/ui/components/separator"
-import { createAdminQuestion } from "@/actions/admin-questions"
+import type { CreateQuestionPayload } from "@/actions/admin-questions"
 import type { NotebookQuestionContext, NotebookQuestionOption, NotebookQuestionTypeOption, PendingQuestion } from "@/app/(admin)/admin/cadernos/criar/create-notebook-form"
-import { Label } from "@workspace/ui/components/label"
 import { QuestionPreview } from "./question-preview"
+import { sanitizeHtml } from "@/lib/sanitize-html"
 
 interface DraftAlternative {
     id: string
@@ -63,15 +62,13 @@ export function NotebookQuestionPicker({
     questionTypes,
     selectedQuestionIds,
     onSelectedQuestionIdsChange,
-    onQuestionCreated,
     onPendingQuestionCreated,
 }: NotebookQuestionPickerProps) {
     const [view, setView] = React.useState<'bank' | 'notebook' | 'production'>('production')
-    const [isCreateOpen, setIsCreateOpen] = React.useState(false)
     const defaultQuestionType = questionTypes[0]
     const [questionTypeId, setQuestionTypeId] = React.useState(defaultQuestionType?.id ?? "")
     const [modalError, setModalError] = React.useState<string | null>(null)
-    const [isPending, startTransition] = React.useTransition()
+    const isPending = false
     
     // Estados do Formulário de Criação Completo
     const [statement, setStatement] = React.useState({ supportText: "", commandText: "" })
@@ -97,13 +94,13 @@ export function NotebookQuestionPicker({
     const selectedQuestionType = questionTypes.find((type) => type.id === questionTypeId)
     const selectedModel = selectedQuestionType?.modelo === "certo_errado" ? "certo_errado" : "multipla_escolha"
 
-    const resetQuestionDraft = () => {
+    const resetQuestionDraft = React.useCallback(() => {
         setStatement({ supportText: "", commandText: "" })
         setResolution("")
         setMaterials({ videoUrl: "", objetivo: "", referencia: "", dica: "" })
         setQuestionTypeId(defaultQuestionType?.id ?? "")
         setAlternativas(buildAlternatives(defaultQuestionType))
-    }
+    }, [defaultQuestionType])
 
     const handleTypeChange = (value: string) => {
         const type = questionTypes.find((item) => item.id === value)
@@ -112,23 +109,12 @@ export function NotebookQuestionPicker({
         setAlternativas(buildAlternatives(type))
     }
 
-    // Atalho Ctrl + Enter para salvar
-    React.useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.ctrlKey && e.key === "Enter" && view === "production") {
-                handleCreateQuestion()
-            }
-        }
-        window.addEventListener("keydown", handleKeyDown)
-        return () => window.removeEventListener("keydown", handleKeyDown)
-    }, [view, statement, alternativas, resolution, materials, questionTypeId])
-
-    const handleCreateQuestion = (shouldReset = true) => {
+    const handleCreateQuestion = React.useCallback((shouldReset = true) => {
         setModalError(null)
 
         try {
             const tempId = `temp_${Date.now()}`
-            const payload = {
+            const payload: CreateQuestionPayload = {
                 disciplinaId: context.disciplinaId || null,
                 assuntoId: null,
                 topicoId: null,
@@ -164,17 +150,27 @@ export function NotebookQuestionPicker({
 
             onPendingQuestionCreated({
                 tempId,
-                payload: payload as any
+                payload,
             })
 
             if (shouldReset) {
                 resetQuestionDraft()
             }
-            setIsCreateOpen(false)
         } catch (error) {
             setModalError(error instanceof Error ? error.message : "Não foi possível preparar a questão inédita.")
         }
-    }
+    }, [alternativas, context.concursoId, context.concursoLabel, context.disciplinaId, materials.dica, materials.objetivo, materials.referencia, materials.videoUrl, onPendingQuestionCreated, questionTypeId, resetQuestionDraft, resolution, statement.commandText, statement.supportText])
+
+    // Atalho Ctrl + Enter para salvar
+    React.useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.ctrlKey && e.key === "Enter" && view === "production") {
+                handleCreateQuestion()
+            }
+        }
+        window.addEventListener("keydown", handleKeyDown)
+        return () => window.removeEventListener("keydown", handleKeyDown)
+    }, [view, handleCreateQuestion])
 
     return (
         <Card>
@@ -468,14 +464,14 @@ export function NotebookQuestionPicker({
                                                             <p className="text-[10px] font-bold uppercase tracking-widest text-primary/70">Texto de Apoio</p>
                                                             <div
                                                                 className="prose dark:prose-invert max-w-none text-sm leading-relaxed text-foreground/80"
-                                                                dangerouslySetInnerHTML={{ __html: question.supportText }}
+                                                                dangerouslySetInnerHTML={{ __html: sanitizeHtml(question.supportText) }}
                                                             />
                                                         </div>
                                                     )}
 
                                                     <div
                                                         className="prose dark:prose-invert max-w-none text-base font-semibold leading-relaxed text-foreground/90"
-                                                        dangerouslySetInnerHTML={{ __html: question.text }}
+                                                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(question.text) }}
                                                     />
 
                                                     <div className="space-y-3">
@@ -487,7 +483,7 @@ export function NotebookQuestionPicker({
                                                                     </div>
                                                                     <div
                                                                         className="prose dark:prose-invert max-w-none text-sm leading-relaxed text-foreground/80"
-                                                                        dangerouslySetInnerHTML={{ __html: alternative.text }}
+                                                                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(alternative.text) }}
                                                                     />
                                                                 </div>
                                                             ))
@@ -503,7 +499,7 @@ export function NotebookQuestionPicker({
                                                             <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">Resolução</p>
                                                             <div
                                                                 className="prose dark:prose-invert max-w-none text-sm leading-relaxed text-foreground/80"
-                                                                dangerouslySetInnerHTML={{ __html: question.resolution }}
+                                                                dangerouslySetInnerHTML={{ __html: sanitizeHtml(question.resolution) }}
                                                             />
                                                         </div>
                                                     )}

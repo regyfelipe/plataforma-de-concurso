@@ -48,7 +48,7 @@ export default async function SuportePage() {
           <p className="text-center text-sm text-muted-foreground">
             Abra um ticket e nossa equipe responderá em até 24 horas.
           </p>
-          <Button render={<Link href="/suporte/novo" />}>
+          <Button nativeButton={false} render={<Link href="/suporte/novo" />}>
             <HeadphonesIcon className="mr-2 h-4 w-4" />
             Abrir Ticket
           </Button>

@@ -10,15 +10,31 @@ export default async function EstudarPage({ params }: { params: Promise<{ id: st
   
   const notebook = await prisma.caderno.findUnique({
     where: { id },
-    include: {
-      concurso: true,
+    select: {
+      nome: true,
       questoes: {
         orderBy: { ordem: "asc" },
-        include: {
+        select: {
           questao: {
-            include: {
+            select: {
+              id: true,
+              code: true,
+              enunciado: true,
+              textoApoio: true,
+              resolucao: true,
               disciplina: { select: { nome: true } },
-              alternativas: { orderBy: { letra: "asc" } },
+              alternativas: {
+                orderBy: { letra: "asc" },
+                select: {
+                  id: true,
+                  letra: true,
+                  texto: true,
+                  isCorreta: true,
+                  explicacao: true,
+                  referencia: true,
+                  dica: true,
+                },
+              },
               objetivos: { select: { descricao: true } },
               referencias: { select: { texto: true } },
             }

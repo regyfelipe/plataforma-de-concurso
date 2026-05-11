@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Card, CardContent } from "@workspace/ui/components/card"
 import { toast } from "sonner"
-import { useRouter } from "next/navigation"
+import { sanitizeHtml } from "@/lib/sanitize-html"
+import { submitQuestionAnswer, toggleQuestionFavorite } from "@/actions/question-progress"
 
 import { QuestionHeader } from "./question-header"
 import { QuestionAlternatives } from "./question-alternatives"
@@ -14,12 +15,20 @@ import { QuestionVideoModal } from "./question-video-modal"
 import { QuestionReportModal } from "./question-report-modal"
 
 interface Alternative {
+    id?: string
     letter: string
     text: string
     isCorrect: boolean
     explanation?: string
     reference?: string
     tip?: string
+}
+
+interface QuestionStatsData {
+    totalAnswers: number
+    correctRate: number
+    averageTimeSeconds?: number
+    mostSelectedWrongAlternative?: string
 }
 
 interface QuestionCardProps {
@@ -42,7 +51,7 @@ interface QuestionCardProps {
         resolution?: string | null
         objectives?: string[]
         references?: string[]
-        stats?: any
+        stats?: QuestionStatsData
         commentsCount?: number
         videos?: { title: string; url: string }[]
         author: {
@@ -56,8 +65,7 @@ interface QuestionCardProps {
     currentUserId?: string
 }
 
-export function QuestionCard({ question, onDelete, onDuplicate, userRole = 'STUDENT', currentUserId }: QuestionCardProps) {
-    const router = useRouter()
+export function QuestionCard({ question, userRole = 'STUDENT' }: QuestionCardProps) {
     const [selectedOption, setSelectedOption] = useState<string | null>(null)
     const [isSubmitted, setIsSubmitted] = useState(false)
     const [showExplanation, setShowExplanation] = useState(false)
@@ -65,11 +73,11 @@ export function QuestionCard({ question, onDelete, onDuplicate, userRole = 'STUD
     const [showVideos, setShowVideos] = useState(false)
     const [showReportModal, setShowReportModal] = useState(false)
     const [excludedOptions, setExcludedOptions] = useState<string[]>([])
+    const [isSavingAnswer, setIsSavingAnswer] = useState(false)
 
-    const isOwner = currentUserId === question.author.id
     const isAdmin = userRole === 'ADMIN'
     const isProfessor = userRole === 'PROFESSOR' || isAdmin
-    const canEdit = isOwner || isAdmin
+    const safeQuestionText = useMemo(() => sanitizeHtml(question.questionText), [question.questionText])
 
     const handleOptionSelect = (letter: string) => {
         if (!isSubmitted && !excludedOptions.includes(letter)) {
@@ -87,9 +95,37 @@ export function QuestionCard({ question, onDelete, onDuplicate, userRole = 'STUD
     }
 
     const handleSubmit = async () => {
+        const selectedAlternative = question.alternatives.find((alternative) => alternative.letter === selectedOption)
+
+        if (selectedAlternative?.id) {
+            setIsSavingAnswer(true)
+            try {
+                const result = await submitQuestionAnswer({
+                    questionId: question.id,
+                    alternativeId: selectedAlternative.id,
+                })
+                setIsSubmitted(true)
+                toast.success(result.isCorrect ? "Resposta correta!" : "Resposta enviada!")
+            } catch (error) {
+                toast.error(error instanceof Error ? error.message : "Não foi possível salvar sua resposta.")
+            } finally {
+                setIsSavingAnswer(false)
+            }
+            return
+        }
+
         if (selectedOption) {
             setIsSubmitted(true)
             toast.success("Resposta enviada!")
+        }
+    }
+
+    const handleToggleFavorite = async () => {
+        try {
+            const result = await toggleQuestionFavorite({ questionId: question.id })
+            toast.success(result.favorited ? "Questão adicionada aos favoritos." : "Questão removida dos favoritos.")
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Não foi possível atualizar o favorito.")
         }
     }
 
@@ -117,7 +153,7 @@ export function QuestionCard({ question, onDelete, onDuplicate, userRole = 'STUD
 
                 <div 
                     className="prose dark:prose-invert max-w-none text-xl font-semibold leading-relaxed text-foreground/90 tracking-tight"
-                    dangerouslySetInnerHTML={{ __html: question.questionText }}
+                    dangerouslySetInnerHTML={{ __html: safeQuestionText }}
                 />
 
                 <QuestionAlternatives
@@ -133,7 +169,7 @@ export function QuestionCard({ question, onDelete, onDuplicate, userRole = 'STUD
                 <div className="space-y-8">
                     <QuestionActions
                         isSubmitted={isSubmitted}
-                        selectedOption={selectedOption}
+                        selectedOption={isSavingAnswer ? null : selectedOption}
                         isCorrect={isCorrect}
                         isProfessor={isProfessor}
                         showExplanation={showExplanation}
@@ -149,6 +185,7 @@ export function QuestionCard({ question, onDelete, onDuplicate, userRole = 'STUD
                         onShowVideos={() => setShowVideos(true)}
                         onReportError={() => setShowReportModal(true)}
                         onSubmit={handleSubmit}
+                        onToggleFavorite={handleToggleFavorite}
                     />
 
                     {/* Estatísticas aparecem se solicitado pelo botão ou para professor */}
@@ -175,6 +212,7 @@ export function QuestionCard({ question, onDelete, onDuplicate, userRole = 'STUD
                 onOpenChange={setShowVideos}
             />
             <QuestionReportModal
+                questionId={question.id}
                 open={showReportModal}
                 onOpenChange={setShowReportModal}
             />

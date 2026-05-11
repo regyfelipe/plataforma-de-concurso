@@ -15,6 +15,7 @@ interface QuestionActionsProps {
     onShowVideos: () => void
     onReportError: () => void
     onSubmit: () => void
+    onToggleFavorite?: () => void
 }
 
 export function QuestionActions({ 
@@ -28,7 +29,8 @@ export function QuestionActions({
     onToggleStats,
     onShowVideos,
     onReportError,
-    onSubmit
+    onSubmit,
+    onToggleFavorite
 }: QuestionActionsProps) {
     return (
         <div className="flex flex-col gap-4 py-3">
@@ -112,7 +114,7 @@ export function QuestionActions({
                     >
                         <Flag className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="w-9 h-9 p-0 text-muted-foreground hover:text-amber-500 rounded-full transition-colors" title="Favoritar">
+                    <Button variant="ghost" size="sm" className="w-9 h-9 p-0 text-muted-foreground hover:text-amber-500 rounded-full transition-colors" title="Favoritar" onClick={onToggleFavorite}>
                         <Star className="w-4 h-4" />
                     </Button>
                 </div>

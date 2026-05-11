@@ -177,6 +177,7 @@ export function TaxonomyList({
           createAction
         ) : (
           <Button
+            nativeButton={false}
             render={<Link href={createHref} />}
             className="gap-2 shadow-lg hover:scale-[1.02] transition-transform"
           >

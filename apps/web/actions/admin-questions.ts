@@ -161,7 +161,7 @@ export async function createAdminQuestion(payload: CreateQuestionPayload) {
 }
 
 export async function updateAdminQuestion(id: string, payload: CreateQuestionPayload) {
-  const autorId = await requireAdmin()
+  await requireAdmin()
   const data = createQuestionSchema.parse(payload)
 
   const questao = await prisma.questao.update({
@@ -234,4 +234,21 @@ export async function deleteAdminQuestion(id: string) {
   })
 
   revalidatePath("/admin/questoes")
+}
+
+export async function updateAdminQuestionStatus(id: string, status: "draft" | "published" | "archived" | "reported") {
+  await requireAdmin()
+
+  await prisma.questao.update({
+    where: { id },
+    data: {
+      status,
+      revisadoEm: status === "published" || status === "archived" ? new Date() : undefined,
+    },
+  })
+
+  revalidatePath("/admin/questoes")
+  revalidatePath("/admin/questoes/revisao")
+  revalidatePath("/admin/questoes/publicadas")
+  revalidatePath("/admin/questoes/rejeitadas")
 }

@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { X, Filter, Trash2, Edit2, AlertTriangle, Loader2 } from "lucide-react"
+import { X, Filter, Trash2, Edit2, AlertTriangle, Loader2, CheckCircle2, Archive } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Badge } from "@workspace/ui/components/badge"
 import Link from "next/link"
 import { QuestionCard } from "@/components/questoes/card"
-import { deleteAdminQuestion } from "@/actions/admin-questions"
+import { deleteAdminQuestion, updateAdminQuestionStatus } from "@/actions/admin-questions"
 import { toast } from "sonner"
 
 
@@ -47,6 +47,7 @@ export function AdminQuestionsList({ questions, totalPages }: AdminQuestionsList
         : []
     const [activeFilters, setActiveFilters] = useState(initialFilters)
     const [deletingId, setDeletingId] = useState<string | null>(null)
+    const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null)
     const [isPending, startTransition] = useTransition()
 
     const handleDelete = async (id: string) => {
@@ -55,7 +56,7 @@ export function AdminQuestionsList({ questions, totalPages }: AdminQuestionsList
             try {
                 await deleteAdminQuestion(id)
                 toast.success("Questão excluída com sucesso!")
-            } catch (error) {
+            } catch {
                 toast.error("Erro ao excluir questão.")
             } finally {
                 setDeletingId(null)
@@ -65,6 +66,20 @@ export function AdminQuestionsList({ questions, totalPages }: AdminQuestionsList
 
     const removeFilter = (filter: string) => {
         setActiveFilters(prev => prev.filter(f => f !== filter))
+    }
+
+    const handleStatusChange = (id: string, status: "draft" | "published" | "archived") => {
+        setStatusUpdatingId(id)
+        startTransition(async () => {
+            try {
+                await updateAdminQuestionStatus(id, status)
+                toast.success(status === "published" ? "Questão publicada." : status === "archived" ? "Questão rejeitada." : "Questão enviada para revisão.")
+            } catch {
+                toast.error("Erro ao atualizar status da questão.")
+            } finally {
+                setStatusUpdatingId(null)
+            }
+        })
     }
 
     return (
@@ -126,6 +141,28 @@ export function AdminQuestionsList({ questions, totalPages }: AdminQuestionsList
                             <div key={q.id} className="relative group">
                                 {/* Ações Rápidas Flutuantes de Admin */}
                                 <div className="absolute right-6 top-6 z-10 flex gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
+                                    {q.status !== "published" && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={statusUpdatingId === q.id}
+                                            onClick={() => handleStatusChange(q.id, "published")}
+                                            className="h-8 rounded-lg bg-background/80 backdrop-blur border-border/60 text-[9px] font-black uppercase tracking-widest hover:border-emerald-500/40 hover:text-emerald-500"
+                                        >
+                                            <CheckCircle2 className="w-3 h-3 mr-2" /> Publicar
+                                        </Button>
+                                    )}
+                                    {q.status !== "archived" && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={statusUpdatingId === q.id}
+                                            onClick={() => handleStatusChange(q.id, "archived")}
+                                            className="h-8 rounded-lg bg-background/80 backdrop-blur border-border/60 text-[9px] font-black uppercase tracking-widest hover:border-destructive/40 hover:text-destructive"
+                                        >
+                                            <Archive className="w-3 h-3 mr-2" /> Rejeitar
+                                        </Button>
+                                    )}
                                     <Link href={`/admin/questoes/editar/${q.id}`}>
                                         <Button variant="outline" size="sm" className="h-8 rounded-lg bg-background/80 backdrop-blur border-border/60 text-[9px] font-black uppercase tracking-widest hover:border-primary/40 hover:text-primary">
                                             <Edit2 className="w-3 h-3 mr-2" /> Editar

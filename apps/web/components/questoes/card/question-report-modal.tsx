@@ -12,13 +12,33 @@ import { Button } from "@workspace/ui/components/button"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { Label } from "@workspace/ui/components/label"
 import { toast } from "sonner"
+import { reportQuestion } from "@/actions/question-progress"
+import { useState } from "react"
 
 interface QuestionReportModalProps {
+    questionId: string
     open: boolean
     onOpenChange: (open: boolean) => void
 }
 
-export function QuestionReportModal({ open, onOpenChange }: QuestionReportModalProps) {
+export function QuestionReportModal({ questionId, open, onOpenChange }: QuestionReportModalProps) {
+    const [description, setDescription] = useState("")
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
+    const handleSubmit = async () => {
+        setIsSubmitting(true)
+        try {
+            await reportQuestion({ questionId, description })
+            toast.success("Erro reportado com sucesso!")
+            setDescription("")
+            onOpenChange(false)
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Não foi possível enviar a denúncia.")
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[450px] rounded-2xl p-6">
@@ -38,6 +58,8 @@ export function QuestionReportModal({ open, onOpenChange }: QuestionReportModalP
                             id="error-description"
                             placeholder="Descreva o problema (ex: gabarito incorreto, erro de digitação, etc.)"
                             className="min-h-[120px] rounded-xl resize-none border-border/60 focus:border-primary"
+                            value={description}
+                            onChange={(event) => setDescription(event.target.value)}
                         />
                     </div>
                     <p className="text-[11px] text-muted-foreground leading-tight italic">
@@ -51,12 +73,10 @@ export function QuestionReportModal({ open, onOpenChange }: QuestionReportModalP
                     </Button>
                     <Button 
                         className="rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold"
-                        onClick={() => {
-                            toast.success("Erro reportado com sucesso!")
-                            onOpenChange(false)
-                        }}
+                        onClick={handleSubmit}
+                        disabled={isSubmitting}
                     >
-                        Enviar Denúncia
+                        {isSubmitting ? "Enviando..." : "Enviar Denúncia"}
                     </Button>
                 </DialogFooter>
             </DialogContent>

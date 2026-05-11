@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { MapPin, Plus, Home, Briefcase, X } from "lucide-react"
+import { MapPin, Plus, Home, Briefcase, X, Loader2 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
@@ -37,30 +37,97 @@ const EMPTY_ADDRESS: Address = {
   principal: false,
 }
 
+type CepResponse = {
+  cep: string
+  logradouro: string
+  bairro: string
+  cidade: string
+  estado: string
+  complemento: string
+}
+
+function onlyDigits(value: string) {
+  return value.replace(/\D/g, "")
+}
+
+function formatCep(value: string) {
+  const digits = onlyDigits(value).slice(0, 8)
+
+  if (digits.length <= 5) return digits
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`
+}
+
 export function AddressesManager({ initialAddresses }: { initialAddresses: Address[] }) {
   const router = useRouter()
-  const [addresses, setAddresses] = useState(initialAddresses)
   const [formOpen, setFormOpen] = useState(false)
   const [form, setForm] = useState<Address>(EMPTY_ADDRESS)
   const [saving, setSaving] = useState(false)
+  const [cepLoading, setCepLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    setAddresses(initialAddresses)
-  }, [initialAddresses])
+    const digits = onlyDigits(form.cep)
+
+    if (!formOpen || digits.length !== 8) {
+      return
+    }
+
+    const controller = new AbortController()
+
+    async function fetchCep() {
+      setCepLoading(true)
+      setError(null)
+
+      try {
+        const response = await fetch(`/api/cep/${digits}`, {
+          signal: controller.signal,
+        })
+
+        if (!response.ok) {
+          if (response.status === 404) setError("CEP não encontrado.")
+          else setError("Não foi possível consultar o CEP agora.")
+          return
+        }
+
+        const data = (await response.json()) as CepResponse
+
+        setForm((current) => ({
+          ...current,
+          cep: data.cep,
+          logradouro: data.logradouro || current.logradouro,
+          bairro: data.bairro || current.bairro,
+          cidade: data.cidade || current.cidade,
+          estado: data.estado || current.estado,
+          complemento: current.complemento || data.complemento,
+        }))
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return
+        setError("Não foi possível consultar o CEP agora.")
+      } finally {
+        setCepLoading(false)
+      }
+    }
+
+    const timeout = window.setTimeout(fetchCep, 250)
+
+    return () => {
+      controller.abort()
+      window.clearTimeout(timeout)
+    }
+  }, [form.cep, formOpen])
 
   function updateField(field: keyof Address, value: string | boolean) {
     setForm((current) => ({
       ...current,
-      [field]: value,
+      [field]: field === "cep" && typeof value === "string" ? formatCep(value) : value,
     }))
   }
 
   function openCreate() {
     setForm({
       ...EMPTY_ADDRESS,
-      principal: addresses.length === 0,
+      principal: initialAddresses.length === 0,
     })
     setMessage(null)
     setError(null)
@@ -120,7 +187,7 @@ export function AddressesManager({ initialAddresses }: { initialAddresses: Addre
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium">Endereços salvos</p>
-          <p className="text-xs text-muted-foreground">{addresses.length} endereço(s) cadastrado(s)</p>
+          <p className="text-xs text-muted-foreground">{initialAddresses.length} endereço(s) cadastrado(s)</p>
         </div>
         <Button size="sm" onClick={openCreate}>
           <Plus className="mr-2 h-4 w-4" />
@@ -146,7 +213,19 @@ export function AddressesManager({ initialAddresses }: { initialAddresses: Addre
               </div>
               <div className="space-y-2">
                 <Label htmlFor="cep">CEP *</Label>
-                <Input id="cep" placeholder="00000-000" value={form.cep} onChange={(e) => updateField("cep", e.target.value)} />
+                <div className="relative">
+                  <Input
+                    id="cep"
+                    placeholder="00000-000"
+                    value={form.cep}
+                    maxLength={9}
+                    onChange={(e) => updateField("cep", e.target.value)}
+                    className={cepLoading ? "pr-8" : undefined}
+                  />
+                  {cepLoading && (
+                    <Loader2 className="absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                  )}
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="estado">Estado *</Label>
@@ -206,7 +285,7 @@ export function AddressesManager({ initialAddresses }: { initialAddresses: Addre
         </Card>
       )}
 
-      {addresses.map((end) => (
+      {initialAddresses.map((end) => (
         <Card key={end.id}>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -230,7 +309,7 @@ export function AddressesManager({ initialAddresses }: { initialAddresses: Addre
         </Card>
       ))}
 
-      {addresses.length === 0 && (
+      {initialAddresses.length === 0 && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center gap-3 py-16">
             <MapPin className="h-8 w-8 text-muted-foreground" />

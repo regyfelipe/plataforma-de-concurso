@@ -59,7 +59,11 @@ function buildEvolution(
   return Array.from(buckets.values())
 }
 
-function getStudentName(nome: string) {
+function getStudentName(nome: string, nomeExibicao?: string | null) {
+  const displayName = nomeExibicao?.trim()
+
+  if (displayName) return displayName
+
   return nome.trim().split(/\s+/)[0] || "aluno"
 }
 
@@ -79,6 +83,11 @@ export default async function DashboardPage() {
       where: { id: session.user.id },
       select: {
         nome: true,
+        perfilExtra: {
+          select: {
+            nomeExibicao: true,
+          },
+        },
       },
     }),
     prisma.respostaUsuario.findMany({
@@ -165,7 +174,7 @@ export default async function DashboardPage() {
     <DashboardClient
       data={{
         aluno: {
-          nome: getStudentName(usuario.nome),
+          nome: getStudentName(usuario.nome, usuario.perfilExtra?.nomeExibicao),
         },
         resumo: {
           questoesHoje,

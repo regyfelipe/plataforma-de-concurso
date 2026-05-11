@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useSyncExternalStore } from "react"
 import {
   Flame,
   Target,
@@ -57,6 +57,11 @@ function greeting() {
 
 export function DashboardClient({ data }: { data: DashboardData }) {
   const [timeframe, setTimeframe] = useState<"7 dias" | "30 dias" | "90 dias">("7 dias")
+  const greetingText = useSyncExternalStore(
+    () => () => {},
+    greeting,
+    () => "Bom dia"
+  )
   const accuracy = `${data.resumo.taxaAcerto.toFixed(1)}%`
   const bestRanking = data.resumo.melhorRanking?.posicao
     ? `#${data.resumo.melhorRanking.posicao}`
@@ -68,7 +73,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
     <div className="flex-1 space-y-8 p-8 pt-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{greeting()}, {data.aluno.nome}!</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{greetingText}, {data.aluno.nome}!</h1>
           <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <TrendingUp className="h-3.5 w-3.5 text-primary" />
             {data.resumo.totalQuestoes > 0

@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
+import { sanitizeHtml } from "@/lib/sanitize-html"
 import { Hash } from "lucide-react"
 
 interface QuestionHeaderProps {
@@ -39,14 +40,15 @@ const getDifficultyLabel = (difficulty: string) => {
 }
 
 export function QuestionHeader({
-    code, discipline, subject, topic, supportText, difficulty, isUnique, year, board, institution, career, educationLevel
+    code, discipline, subject, supportText, difficulty, isUnique, year, board, institution, career, educationLevel
 }: QuestionHeaderProps) {
     const [isExpanded, setIsExpanded] = useState(false)
+    const safeSupportText = useMemo(() => sanitizeHtml(supportText), [supportText])
     const difficultyColor = getDifficultyColor(difficulty)
 
     // Lógica para decidir se o texto precisa de truncamento (mais de 4 linhas ou longo demais)
-    const needsTruncation = supportText
-        ? supportText.split('\n').length > 4 || supportText.length > 250
+    const needsTruncation = safeSupportText
+        ? safeSupportText.split('\n').length > 4 || safeSupportText.length > 250
         : false
 
     return (
@@ -91,7 +93,7 @@ export function QuestionHeader({
             </div>
 
             {/* Texto de Apoio Minimalista */}
-            {supportText && (
+            {safeSupportText && (
                 <div className="pt-4 mt-2 border-t border-border/40">
                     <div className="flex flex-col gap-2">
                         <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">
@@ -101,7 +103,7 @@ export function QuestionHeader({
                         <div className={`relative transition-all duration-300 ${isExpanded ? "" : needsTruncation ? "max-h-[100px] overflow-hidden" : ""}`}>
                             <div 
                                 className="text-sm text-foreground/90 leading-relaxed font-medium prose dark:prose-invert max-w-none"
-                                dangerouslySetInnerHTML={{ __html: supportText }}
+                                dangerouslySetInnerHTML={{ __html: safeSupportText }}
                             />
 
                             {needsTruncation && !isExpanded && (

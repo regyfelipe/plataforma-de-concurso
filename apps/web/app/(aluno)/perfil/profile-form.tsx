@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useRef } from "react"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { Camera, AlertTriangle, Trash2, Loader2 } from "lucide-react"
+import { Camera, AlertTriangle, Trash2, Loader2, Check, Search } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
@@ -12,12 +13,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@work
 import { Separator } from "@workspace/ui/components/separator"
 import { Badge } from "@workspace/ui/components/badge"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@workspace/ui/components/select"
+  Combobox,
+  ComboboxInput,
+  ComboboxContent,
+  ComboboxList,
+  ComboboxEmpty,
+} from "@workspace/ui/components/combobox"
+import { cn } from "@workspace/ui/lib/utils"
 import { updateStudentProfile } from "@/actions/profile"
 import { uploadToR2 } from "@/actions/upload"
 import { toast } from "sonner"
@@ -27,6 +29,28 @@ const VISIBILIDADE_OPTIONS = [
   { value: "basico_publico", label: "Básico Público", desc: "Apenas nome e foto de perfil são visíveis" },
   { value: "completo_publico", label: "Completo Público", desc: "Perfil completo visível (sobre mim, redes sociais, etc.)" },
 ] as const
+
+function onlyDigits(value: string) {
+  return value.replace(/\D/g, "")
+}
+
+function formatCpf(value: string) {
+  const digits = onlyDigits(value).slice(0, 11)
+
+  if (digits.length <= 3) return digits
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`
+  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`
+}
+
+function formatPhone(value: string) {
+  const digits = onlyDigits(value).slice(0, 11)
+
+  if (digits.length <= 2) return digits.length > 0 ? `(${digits}` : ""
+  if (digits.length <= 3) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2, 3)} ${digits.slice(3)}`
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 3)} ${digits.slice(3, 7)}-${digits.slice(7)}`
+}
 
 type ProfileData = {
   email: string
@@ -47,40 +71,46 @@ type ProfileData = {
   facebook: string
   visibilidade: "privado" | "basico_publico" | "completo_publico"
   carreira: string
+  carreiraIconUrl: string
   carreiraId: string
   carreiras: Array<{
     id: string
     nome: string
+    iconUrl: string
   }>
 }
 
 export function ProfileForm({ profile }: { profile: ProfileData }) {
   const [nome, setNome] = useState(profile.nome)
-  const [cpf, setCpf] = useState(profile.cpfValue)
+  const [cpf, setCpf] = useState(formatCpf(profile.cpfValue))
   const [dataNascimento, setDataNascimento] = useState(profile.dataNascimentoValue)
   const [visibilidade, setVisibilidade] = useState(profile.visibilidade)
   const [carreiraId, setCarreiraId] = useState(profile.carreiraId)
   const [nomeExibicao, setNomeExibicao] = useState(profile.nomeExibicao)
-  const [telefone, setTelefone] = useState(profile.telefone)
+  const [telefone, setTelefone] = useState(formatPhone(profile.telefone))
   const [bio, setBio] = useState(profile.bio)
   const [instagram, setInstagram] = useState(profile.instagram)
   const [tiktok, setTiktok] = useState(profile.tiktok)
   const [facebook, setFacebook] = useState(profile.facebook)
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl)
-  
+
+  const [open, setOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
+  const selectedCareer = carreiraId ? profile.carreiras.find((career) => career.id === carreiraId) : null
+  const selectedCareerName = selectedCareer?.nome ?? null
+  const currentCareerIconUrl = selectedCareer?.iconUrl || profile.carreiraIconUrl
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Validar tamanho (ex: 2MB)
     if (file.size > 2 * 1024 * 1024) {
       toast.error("A imagem deve ter no máximo 2MB")
       return
@@ -93,7 +123,7 @@ export function ProfileForm({ profile }: { profile: ProfileData }) {
       formData.append("path", "avatars")
 
       const result = await uploadToR2(formData)
-      
+
       if (result.success && result.url) {
         setAvatarUrl(result.url)
         toast.success("Foto carregada com sucesso! Lembre-se de salvar o perfil.")
@@ -130,7 +160,7 @@ export function ProfileForm({ profile }: { profile: ProfileData }) {
     if (result.success) {
       setMessage(result.message)
       toast.success(result.message)
-      router.refresh() // Força a atualização de todos os componentes (incluindo Sidebar)
+      router.refresh()
     } else {
       setError(result.message || "Não foi possível atualizar o perfil.")
       toast.error(result.message || "Erro ao atualizar perfil")
@@ -142,11 +172,10 @@ export function ProfileForm({ profile }: { profile: ProfileData }) {
   return (
     <div className="space-y-6">
       {(message || error) && (
-        <div className={`rounded-md border p-3 text-center text-sm font-medium ${
-          error
-            ? "border-destructive/20 bg-destructive/10 text-destructive"
-            : "border-primary/20 bg-primary/10 text-primary"
-        }`}>
+        <div className={`rounded-md border p-3 text-center text-sm font-medium ${error
+          ? "border-destructive/20 bg-destructive/10 text-destructive"
+          : "border-primary/20 bg-primary/10 text-primary"
+          }`}>
           {error || message}
         </div>
       )}
@@ -163,18 +192,18 @@ export function ProfileForm({ profile }: { profile: ProfileData }) {
                 <AvatarImage src={avatarUrl} alt={nome} className="object-cover" />
                 <AvatarFallback className="text-xl">{profile.iniciais}</AvatarFallback>
               </Avatar>
-              
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                className="hidden" 
+
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
                 accept="image/*"
                 onChange={handleFileUpload}
               />
 
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 disabled={uploading}
                 onClick={() => fileInputRef.current?.click()}
                 className="relative"
@@ -230,9 +259,10 @@ export function ProfileForm({ profile }: { profile: ProfileData }) {
                 <Input
                   id="cpf"
                   placeholder="000.000.000-00"
-                  value={profile.canEditCpf ? cpf : profile.cpf}
+                  value={profile.canEditCpf ? cpf : formatCpf(profile.cpf)}
                   disabled={!profile.canEditCpf}
-                  onChange={(e) => setCpf(e.target.value)}
+                  onChange={(e) => setCpf(formatCpf(e.target.value))}
+                  maxLength={14}
                 />
                 <p className="text-xs text-muted-foreground">
                   {profile.canEditCpf ? "Informe seu CPF. Depois de salvo, ele não poderá ser alterado aqui." : "CPF não pode ser alterado."}
@@ -255,9 +285,10 @@ export function ProfileForm({ profile }: { profile: ProfileData }) {
                 <Label htmlFor="telefone">Telefone</Label>
                 <Input
                   id="telefone"
-                  placeholder="(00) 00000-0000"
+                  placeholder="(00) 9 9999-9999"
                   value={telefone}
-                  onChange={(e) => setTelefone(e.target.value)}
+                  onChange={(e) => setTelefone(formatPhone(e.target.value))}
+                  maxLength={16}
                 />
               </div>
             </div>
@@ -279,8 +310,19 @@ export function ProfileForm({ profile }: { profile: ProfileData }) {
         <CardContent>
           <div className="flex items-center justify-between gap-4 rounded-lg border p-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
-                <span className="text-xs font-semibold text-primary">{profile.carreira.slice(0, 2).toUpperCase()}</span>
+              <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border bg-primary/10">
+                {currentCareerIconUrl ? (
+                  <Image
+                    src={currentCareerIconUrl}
+                    alt={selectedCareerName ?? profile.carreira}
+                    width={40}
+                    height={40}
+                    className="h-full w-full object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <span className="text-xs font-semibold text-primary">{profile.carreira.slice(0, 2).toUpperCase()}</span>
+                )}
               </div>
               <div>
                 <span className="font-medium">{profile.carreira}</span>
@@ -288,19 +330,80 @@ export function ProfileForm({ profile }: { profile: ProfileData }) {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Select value={carreiraId || "none"} onValueChange={(value) => setCarreiraId(value === "none" || !value ? "" : value)}>
-                <SelectTrigger className="w-64">
-                  <SelectValue placeholder="Selecionar carreira" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Não definida</SelectItem>
-                  {profile.carreiras.map((carreira) => (
-                    <SelectItem key={carreira.id} value={carreira.id}>
-                      {carreira.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox open={open} onOpenChange={setOpen}>
+                <div className="relative">
+                  <ComboboxInput
+                    className="w-64"
+                    value={selectedCareerName ?? "Selecionar carreira"}
+                    readOnly
+                    onClick={() => setOpen(true)}
+                    onFocus={() => setOpen(true)}
+                  />
+                </div>
+
+                <ComboboxContent className="w-64">
+                  <div className="flex items-center gap-2 px-3 py-2 border-b">
+                    <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <input
+                      placeholder="Busca rápida..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                    />
+                  </div>
+
+                  <ComboboxList className="max-h-[200px] overflow-y-auto p-1">
+                    <div
+                      role="option"
+                      onClick={() => {
+                        setCarreiraId("")
+                        setOpen(false)
+                        setSearchTerm("")
+                      }}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded-sm text-sm cursor-pointer hover:bg-accent transition-colors"
+                    >
+                      <div className={cn(
+                        "h-4 w-4 rounded border flex items-center justify-center shrink-0",
+                        !carreiraId ? "bg-primary border-primary text-primary-foreground" : "border-input"
+                      )}>
+                        {!carreiraId && <Check className="h-3 w-3" />}
+                      </div>
+                      <span className={!carreiraId ? "font-medium" : "text-muted-foreground"}>Não definida</span>
+                    </div>
+
+                    {profile.carreiras
+                      .filter(c => c.nome.toLowerCase().includes(searchTerm.toLowerCase()))
+                      .map((carreira) => (
+                        <div
+                          key={carreira.id}
+                          role="option"
+                          onClick={() => {
+                            setCarreiraId(carreira.id)
+                            setOpen(false)
+                            setSearchTerm("")
+                          }}
+                          className="flex items-center gap-2 px-2 py-1.5 rounded-sm text-sm cursor-pointer hover:bg-accent transition-colors"
+                        >
+                          <div className={cn(
+                            "h-4 w-4 rounded border flex items-center justify-center shrink-0",
+                            carreiraId === carreira.id ? "bg-primary border-primary text-primary-foreground" : "border-input"
+                          )}>
+                            {carreiraId === carreira.id && <Check className="h-3 w-3" />}
+                          </div>
+                          <span className={carreiraId === carreira.id ? "font-medium" : "text-muted-foreground"}>
+                            {carreira.nome}
+                          </span>
+                        </div>
+                      ))}
+
+                    {profile.carreiras.filter(c => c.nome.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && (
+                      <ComboboxEmpty className="py-6 text-center text-sm text-muted-foreground">
+                        Nenhuma carreira encontrada.
+                      </ComboboxEmpty>
+                    )}
+                  </ComboboxList>
+                </ComboboxContent>
+              </Combobox>
               <Button variant="outline" size="sm" onClick={handleSave} disabled={saving}>
                 Alterar
               </Button>
@@ -366,11 +469,12 @@ export function ProfileForm({ profile }: { profile: ProfileData }) {
             <button
               key={opt.value}
               onClick={() => setVisibilidade(opt.value)}
-              className={`flex w-full items-center justify-between rounded-lg border p-4 text-left transition-colors ${
+              className={cn(
+                "flex w-full items-center justify-between rounded-lg border p-4 text-left transition-colors",
                 visibilidade === opt.value
                   ? "border-primary bg-primary/5"
                   : "border-border hover:border-primary/50"
-              }`}
+              )}
             >
               <div>
                 <p className="text-sm font-medium">{opt.label}</p>

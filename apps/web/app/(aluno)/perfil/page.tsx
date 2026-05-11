@@ -85,10 +85,12 @@ export default async function PerfilPage() {
         facebook: usuario.perfilExtra?.facebook || "",
         visibilidade: usuario.perfilExtra?.visibilidade || "privado",
         carreira: usuario.perfilExtra?.carreira?.nome || "Não definida",
+        carreiraIconUrl: usuario.perfilExtra?.carreira?.iconUrl || "",
         carreiraId: usuario.perfilExtra?.carreiraId || "",
         carreiras: carreiras.map((carreira) => ({
           id: carreira.id,
           nome: carreira.nome,
+          iconUrl: carreira.iconUrl || "",
         })),
       }}
     />

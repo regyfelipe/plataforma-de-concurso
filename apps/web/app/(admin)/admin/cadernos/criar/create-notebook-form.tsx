@@ -2,12 +2,12 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { Save, Eye, CheckCircle2, ArrowRight, ArrowLeft, LayoutList, ListOrdered } from "lucide-react"
+import { Save, Eye, CheckCircle2, ArrowRight, ArrowLeft, LayoutList } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Badge } from "@workspace/ui/components/badge"
 import { Separator } from "@workspace/ui/components/separator"
 import { createAdminNotebook, updateAdminNotebook } from "@/actions/admin-notebooks"
-import { createAdminQuestion, type CreateAdminQuestionPayload } from "@/actions/admin-questions"
+import { createAdminQuestion, type CreateQuestionPayload } from "@/actions/admin-questions"
 import { NotebookBasicInfo } from "@/components/admin/cadernos/notebook-basic-info"
 import { NotebookQuestionPicker } from "@/components/admin/cadernos/notebook-question-picker"
 import { NotebookResolutionSettings } from "@/components/admin/cadernos/notebook-resolution-settings"
@@ -50,7 +50,7 @@ export interface NotebookQuestionOption {
 
 export interface PendingQuestion {
     tempId: string
-    payload: CreateAdminQuestionPayload
+    payload: CreateQuestionPayload
 }
 
 export interface NotebookQuestionContext {
@@ -132,36 +132,41 @@ export function CreateNotebookForm({
     const [isPending, startTransition] = React.useTransition()
     const totalSteps = 3
 
+    const optionLabel = (items: FilterOption[], value: string) =>
+        items.find((item) => item.value === value)?.label ?? ""
+
+    const buildAutoTitle = (concursoId: string, disciplinaId: string) => {
+        if (!concursoId || !disciplinaId) return ""
+
+        const concursoLabel = optionLabel(options.concursos, concursoId)
+        const disciplinaLabel = optionLabel(options.disciplinas, disciplinaId)
+
+        if (!concursoLabel || !disciplinaLabel) return ""
+
+        const parts = concursoLabel.split(" • ")
+        const nomeAno = parts[1] || ""
+        const cargo = parts[2] || "Geral"
+
+        return `${nomeAno} • ${disciplinaLabel} • ${cargo}`
+    }
+
     const updateField = <K extends keyof NotebookFormState>(field: K, value: NotebookFormState[K]) => {
         setError(null)
-        setForm((prev) => ({ ...prev, [field]: value }))
+        setForm((prev) => {
+            const next = { ...prev, [field]: value }
+
+            if (field === "concursoId" || field === "disciplinaId") {
+                const autoTitle = buildAutoTitle(next.concursoId, next.disciplinaId)
+                return autoTitle ? { ...next, nome: autoTitle } : next
+            }
+
+            return next
+        })
     }
 
     const nextStep = () => setStep(prev => Math.min(prev + 1, totalSteps))
     const prevStep = () => setStep(prev => Math.max(prev - 1, 1))
-    const optionLabel = (items: FilterOption[], value: string) =>
-        items.find((item) => item.value === value)?.label ?? ""
 
-    // Automação do Título do Caderno
-    React.useEffect(() => {
-        if (!form.concursoId || !form.disciplinaId) return
-
-        const concursoLabel = optionLabel(options.concursos, form.concursoId)
-        const disciplinaLabel = optionLabel(options.disciplinas, form.disciplinaId)
-
-        if (concursoLabel && disciplinaLabel) {
-            // Formato esperado: "Banca • Nome Ano • Cargo • Carreira"
-            const parts = concursoLabel.split(" • ")
-            const nomeAno = parts[1] || ""
-            const cargo = parts[2] || "Geral"
-
-            const autoTitle = `${nomeAno} • ${disciplinaLabel} • ${cargo}`
-            
-            // Só atualiza se o nome estiver vazio ou se parecer um nome gerado automaticamente
-            // Para simplificar e atender o "Título do Caderno (automaticamente)", vamos sempre atualizar
-            setForm(prev => ({ ...prev, nome: autoTitle }))
-        }
-    }, [form.concursoId, form.disciplinaId])
     const questionContext: NotebookQuestionContext = {
         concursoId: form.concursoId,
         concursoLabel: (() => {
@@ -265,7 +270,7 @@ export function CreateNotebookForm({
                             career: null,
                             subject: null,
                             topic: null,
-                            year: p.payload.ano,
+                            year: p.payload.ano ?? null,
                             educationLevel: "Nível não informado",
                             discipline: "Pendente",
                             difficulty: "medio",
