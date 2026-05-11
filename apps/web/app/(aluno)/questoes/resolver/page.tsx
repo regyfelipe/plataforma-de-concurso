@@ -1,6 +1,16 @@
+import React from "react"
 import { QuestionCard } from "@/components/questoes/card"
 import { QuestionFilter } from "@/components/questoes/filter"
 import { prisma } from "@workspace/database"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@workspace/ui/components/pagination"
 
 function htmlToText(value?: string | null) {
   if (!value) return null
@@ -38,12 +48,58 @@ function uniqueOptions<T>(
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ notebookId?: string }>
+  searchParams: Promise<{ 
+    notebookId?: string; 
+    page?: string;
+    disciplinaId?: string;
+    assuntoId?: string;
+    topicoId?: string;
+    bancaId?: string;
+    carreiraId?: string;
+    dificuldade?: string;
+    ano?: string;
+  }>
 }) {
-  const { notebookId } = await searchParams
+  const { 
+    notebookId, 
+    page: pageParam,
+    disciplinaId,
+    assuntoId,
+    topicoId,
+    bancaId,
+    carreiraId,
+    dificuldade,
+    ano,
+  } = await searchParams
+  const currentPage = Math.max(1, Number(pageParam) || 1)
+  const pageSize = 10
+  const skip = (currentPage - 1) * pageSize
+
+  const whereClause = {
+    ...(notebookId
+      ? {
+          cadernos: {
+            some: {
+              cadernoId: notebookId,
+            },
+          },
+        }
+      : {
+          status: "published" as const,
+          visibilidade: "publica" as const,
+        }),
+    ...(disciplinaId ? { disciplinaId } : {}),
+    ...(assuntoId ? { assuntoId } : {}),
+    ...(topicoId ? { topicoId } : {}),
+    ...(bancaId ? { bancaId } : {}),
+    ...(carreiraId ? { carreiraId } : {}),
+    ...(dificuldade ? { dificuldade: { slug: dificuldade } } : {}),
+    ...(ano ? { ano: Number(ano) } : {}),
+  }
 
   const [
     questoes,
+    totalCount,
     disciplinas,
     assuntos,
     topicos,
@@ -55,20 +111,10 @@ export default async function Page({
     notebook,
   ] = await Promise.all([
     prisma.questao.findMany({
-      where: notebookId
-        ? {
-            cadernos: {
-              some: {
-                cadernoId: notebookId,
-              },
-            },
-          }
-        : {
-            status: "published",
-            visibilidade: "publica",
-          },
+      where: whereClause,
       orderBy: { criadoEm: "desc" },
-      take: notebookId ? undefined : 20,
+      skip,
+      take: pageSize,
       include: {
         disciplina: { select: { nome: true } },
         assunto: { select: { nome: true } },
@@ -84,6 +130,9 @@ export default async function Page({
         videos: { select: { titulo: true, url: true } },
         autor: { select: { id: true, nome: true } },
       },
+    }),
+    prisma.questao.count({
+      where: whereClause,
     }),
     prisma.disciplina.findMany({
       where: { ativo: true },
@@ -127,6 +176,8 @@ export default async function Page({
     }),
     notebookId ? prisma.caderno.findUnique({ where: { id: notebookId } }) : null,
   ])
+
+  const totalPages = Math.ceil(totalCount / pageSize)
 
   const questions = questoes.map((questao) => ({
     id: questao.id,
@@ -242,9 +293,101 @@ export default async function Page({
         )}
       </div>
 
+      {totalPages > 1 && (
+        <Pagination className="py-10">
+          <PaginationContent>
+            {currentPage > 1 && (
+              <PaginationItem>
+                <PaginationPrevious 
+                    href={`?${new URLSearchParams({ 
+                        ...Object.fromEntries(
+                            Object.entries({
+                                notebookId,
+                                disciplinaId,
+                                assuntoId,
+                                topicoId,
+                                bancaId,
+                                carreiraId,
+                                dificuldade,
+                                ano,
+                                page: (currentPage - 1).toString()
+                            }).filter(([_, v]) => v != null)
+                        )
+                    }).toString()}`} 
+                    text="Anterior"
+                />
+              </PaginationItem>
+            )}
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2)
+              .map((p, i, arr) => {
+                const prevPage = arr[i - 1]
+                const showEllipsisBefore = i > 0 && prevPage !== undefined && p - prevPage > 1
+                return (
+                  <React.Fragment key={p}>
+                    {showEllipsisBefore && (
+                      <PaginationItem>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    )}
+                    <PaginationItem>
+                      <PaginationLink
+                        href={`?${new URLSearchParams({ 
+                            ...Object.fromEntries(
+                                Object.entries({
+                                    notebookId,
+                                    disciplinaId,
+                                    assuntoId,
+                                    topicoId,
+                                    bancaId,
+                                    carreiraId,
+                                    dificuldade,
+                                    ano,
+                                    page: p.toString()
+                                }).filter(([_, v]) => v != null)
+                            )
+                        }).toString()}`}
+                        isActive={currentPage === p}
+                      >
+                        {p}
+                      </PaginationLink>
+                    </PaginationItem>
+                  </React.Fragment>
+                )
+              })}
+
+            {currentPage < totalPages && (
+              <PaginationItem>
+                <PaginationNext 
+                    href={`?${new URLSearchParams({ 
+                        ...Object.fromEntries(
+                            Object.entries({
+                                notebookId,
+                                disciplinaId,
+                                assuntoId,
+                                topicoId,
+                                bancaId,
+                                carreiraId,
+                                dificuldade,
+                                ano,
+                                page: (currentPage + 1).toString()
+                            }).filter(([_, v]) => v != null)
+                        )
+                    }).toString()}`} 
+                    text="Próxima"
+                />
+              </PaginationItem>
+            )}
+          </PaginationContent>
+        </Pagination>
+      )}
+
       <div className="flex justify-center py-8">
         <p className="text-sm text-muted-foreground italic text-center">
-          {notebookId ? "Fim do caderno de questões." : "Você chegou ao fim da lista inicial. Use os filtros para encontrar mais questões."}
+          {notebookId && currentPage === totalPages ? "Fim do caderno de questões." : ""}
+          {!notebookId && currentPage === totalPages ? "Você chegou ao fim da lista disponível. Use os filtros para encontrar mais questões." : ""}
+          {currentPage < totalPages ? `Página ${currentPage} de ${totalPages}` : ""}
         </p>
       </div>
     </div>

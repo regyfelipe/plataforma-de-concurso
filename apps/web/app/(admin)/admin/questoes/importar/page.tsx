@@ -31,6 +31,7 @@ export default async function ImportarQuestoesPage() {
     niveis,
     dificuldades,
     tiposQuestao,
+    importHistory,
   ] = await Promise.all([
     prisma.disciplina.findMany({
       where: { ativo: true },
@@ -82,6 +83,24 @@ export default async function ImportarQuestoesPage() {
       orderBy: { nome: "asc" },
       select: { id: true, nome: true, slug: true, modelo: true, quantidadeAlternativas: true },
     }),
+    prisma.importacaoQuestao.findMany({
+      orderBy: { criadoEm: "desc" },
+      take: 10,
+      select: {
+        id: true,
+        arquivoNome: true,
+        tipoArquivo: true,
+        status: true,
+        totalQuestoes: true,
+        totalImportadas: true,
+        totalErros: true,
+        totalAvisos: true,
+        erros: true,
+        avisos: true,
+        criadoEm: true,
+        usuario: { select: { nome: true, perfilExtra: { select: { nomeExibicao: true } } } },
+      },
+    }),
   ])
 
   return (
@@ -98,6 +117,20 @@ export default async function ImportarQuestoesPage() {
         dificuldades,
         tiposQuestao,
       }}
+      history={importHistory.map((item) => ({
+        id: item.id,
+        arquivoNome: item.arquivoNome,
+        tipoArquivo: item.tipoArquivo,
+        status: item.status,
+        totalQuestoes: item.totalQuestoes,
+        totalImportadas: item.totalImportadas,
+        totalErros: item.totalErros,
+        totalAvisos: item.totalAvisos,
+        erros: item.erros,
+        avisos: item.avisos,
+        criadoEm: item.criadoEm.toISOString(),
+        usuario: item.usuario.perfilExtra?.nomeExibicao || item.usuario.nome,
+      }))}
     />
   )
 }

@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Search, Plus, BookOpen, Trash2, X, ChevronUp, ChevronDown, Filter as FilterIcon } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -55,15 +56,75 @@ interface QuestionFilterProps {
 }
 
 export function QuestionFilter({ options }: QuestionFilterProps) {
+    const router = useRouter()
+    const searchParams = useSearchParams()
+    
     const [isExpanded, setIsExpanded] = useState(true)
-    const [selectedConcurso, setSelectedConcurso] = useState('all')
+    const [selectedConcurso, setSelectedConcurso] = useState(searchParams.get("concursoId") || 'all')
     const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([])
     
-    // Estados para Hierarquia de Carreira
-    const [selectedCarreira, setSelectedCarreira] = useState("")
+    // Estados para Filtros
+    const [selectedDisciplina, setSelectedDisciplina] = useState(searchParams.get("disciplinaId") || "")
+    const [selectedAssunto, setSelectedAssunto] = useState(searchParams.get("assuntoId") || "")
+    const [selectedTopico, setSelectedTopico] = useState(searchParams.get("topicoId") || "")
+    const [selectedBanca, setSelectedBanca] = useState(searchParams.get("bancaId") || "")
+    const [selectedDificuldade, setSelectedDificuldade] = useState(searchParams.get("dificuldade") || "")
+    const [selectedAno, setSelectedAno] = useState(searchParams.get("ano") || "")
+    const [selectedCarreira, setSelectedCarreira] = useState(searchParams.get("carreiraId") || "")
     const [selectedSubcarreira, setSelectedSubcarreira] = useState("")
     const [selectedOrgao, setSelectedOrgao] = useState("")
     const [selectedCargo, setSelectedCargo] = useState("")
+
+    // Sincronizar activeFilters com searchParams inicial (opcional, mas bom para UX)
+    useEffect(() => {
+        const filters: ActiveFilter[] = []
+        if (selectedDisciplina) filters.push({ id: `disc-${selectedDisciplina}`, label: "Disciplina selecionada", category: "disciplina" })
+        // Adicionar outros conforme necessário se quiser mostrar os chips
+        setActiveFilters(filters)
+    }, [])
+
+    const handleFilter = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        
+        if (selectedDisciplina) params.set("disciplinaId", selectedDisciplina)
+        else params.delete("disciplinaId")
+        
+        if (selectedAssunto) params.set("assuntoId", selectedAssunto)
+        else params.delete("assuntoId")
+        
+        if (selectedTopico) params.set("topicoId", selectedTopico)
+        else params.delete("topicoId")
+        
+        if (selectedBanca) params.set("bancaId", selectedBanca)
+        else params.delete("bancaId")
+        
+        if (selectedDificuldade) params.set("dificuldade", selectedDificuldade)
+        else params.delete("dificuldade")
+        
+        if (selectedAno) params.set("ano", selectedAno)
+        else params.delete("ano")
+        
+        if (selectedCarreira) params.set("carreiraId", selectedCarreira)
+        else params.delete("carreiraId")
+
+        // Resetar página ao filtrar
+        params.delete("page")
+        
+        router.push(`?${params.toString()}`)
+    }
+
+    const clearFilters = () => {
+        setSelectedDisciplina("")
+        setSelectedAssunto("")
+        setSelectedTopico("")
+        setSelectedBanca("")
+        setSelectedDificuldade("")
+        setSelectedAno("")
+        setSelectedCarreira("")
+        setSelectedConcurso("all")
+        setActiveFilters([])
+        router.push("?")
+    }
 
     const removeFilter = (id: string) => {
         if (id.startsWith('concurso-')) setSelectedConcurso('all')
@@ -127,25 +188,54 @@ export function QuestionFilter({ options }: QuestionFilterProps) {
                             </div>
                         </div>
                         <div className="lg:col-span-3">
-                            <FilterSelect label="Disciplinas" placeholder="Todas as matérias" options={options?.disciplinas ?? DISCIPLINAS_MOCK} />
+                            <FilterSelect 
+                                label="Disciplinas" 
+                                placeholder="Todas as matérias" 
+                                options={options?.disciplinas ?? DISCIPLINAS_MOCK} 
+                                value={selectedDisciplina}
+                                onValueChange={setSelectedDisciplina}
+                                isMulti={false}
+                            />
                         </div>
                         <div className="lg:col-span-3">
-                            <FilterSelect label="Assuntos" placeholder="Selecione o assunto" options={options?.assuntos ?? ASSUNTOS_MOCK} />
+                            <FilterSelect 
+                                label="Assuntos" 
+                                placeholder="Selecione o assunto" 
+                                options={options?.assuntos ?? ASSUNTOS_MOCK} 
+                                value={selectedAssunto}
+                                onValueChange={setSelectedAssunto}
+                                isMulti={false}
+                            />
                         </div>
                         <div className="lg:col-span-3">
-                            <FilterSelect label="Tópicos" placeholder="Selecione o tópico" options={options?.topicos ?? TOPICOS_MOCK ?? []} />
+                            <FilterSelect 
+                                label="Tópicos" 
+                                placeholder="Selecione o tópico" 
+                                options={options?.topicos ?? TOPICOS_MOCK ?? []} 
+                                value={selectedTopico}
+                                onValueChange={setSelectedTopico}
+                                isMulti={false}
+                            />
                         </div>
                     </div>
 
                     {/* Grid secundário de filtros */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 ">
-                        <FilterSelect label="Bancas" placeholder="Selecione a Bancas" options={options?.bancas ?? BANCAS_MOCK} />
+                        <FilterSelect 
+                            label="Bancas" 
+                            placeholder="Selecione a Bancas" 
+                            options={options?.bancas ?? BANCAS_MOCK} 
+                            value={selectedBanca}
+                            onValueChange={setSelectedBanca}
+                            isMulti={false}
+                        />
                         
                         {/* Hierarquia de Carreiras */}
                         <FilterSelect 
                             label="Carreira" 
                             placeholder="Ex: Policial" 
                             options={options?.carreiras?.filter(c => !c.parentId) ?? []} 
+                            value={selectedCarreira}
                             isMulti={false}
                             onValueChange={(val) => {
                                 setSelectedCarreira(val)
@@ -158,6 +248,7 @@ export function QuestionFilter({ options }: QuestionFilterProps) {
                             label="Subcarreira" 
                             placeholder={selectedCarreira ? "Ex: Militar" : "Selecione Carreira"} 
                             options={options?.carreiras?.filter(c => c.parentId === selectedCarreira) ?? []} 
+                            value={selectedSubcarreira}
                             disabled={!selectedCarreira}
                             isMulti={false}
                             onValueChange={(val) => {
@@ -170,6 +261,7 @@ export function QuestionFilter({ options }: QuestionFilterProps) {
                             label="Órgão / Estado" 
                             placeholder={selectedSubcarreira ? "Ex: PMCE" : "Selecione Subcarreira"} 
                             options={options?.carreiras?.filter(c => c.parentId === selectedSubcarreira) ?? []} 
+                            value={selectedOrgao}
                             disabled={!selectedSubcarreira}
                             isMulti={false}
                             onValueChange={(val) => {
@@ -189,15 +281,35 @@ export function QuestionFilter({ options }: QuestionFilterProps) {
                                             .map(c => ({ label: c.cargo!, value: c.cargo! })) ?? []
                                         : options?.cargos ?? [])
                             }
+                            value={selectedCargo}
                             disabled={!selectedOrgao && selectedConcurso === 'all'}
                             isMulti={false}
                             onValueChange={setSelectedCargo}
                         />
-                        <FilterSelect label="Escolaridade" placeholder="Selecione a Escolaridade" options={options?.escolaridades ?? ESCOLARIDADE_MOCK} />
-                        <FilterSelect label="Ano" placeholder="Selecione o Ano" options={options?.anos ?? ANOS_MOCK} />
-                        <FilterSelect label="Número de Alternativas" placeholder="4 ou 5" options={ALTERNATIVAS_MOCK} />
-                        <FilterSelect label="Nível de Dificuldade" placeholder="Todos" options={options?.dificuldades ?? DIFICULDADE_MOCK} />
-                        <FilterSelect label="Professor Indica" placeholder="Dicas" options={PROFESSOR_INDICA_MOCK} />
+                        <FilterSelect 
+                            label="Escolaridade" 
+                            placeholder="Selecione a Escolaridade" 
+                            options={options?.escolaridades ?? ESCOLARIDADE_MOCK} 
+                            isMulti={false}
+                        />
+                        <FilterSelect 
+                            label="Ano" 
+                            placeholder="Selecione o Ano" 
+                            options={options?.anos ?? ANOS_MOCK} 
+                            value={selectedAno}
+                            onValueChange={setSelectedAno}
+                            isMulti={false}
+                        />
+                        <FilterSelect label="Número de Alternativas" placeholder="4 ou 5" options={ALTERNATIVAS_MOCK} isMulti={false} />
+                        <FilterSelect 
+                            label="Nível de Dificuldade" 
+                            placeholder="Todos" 
+                            options={options?.dificuldades ?? DIFICULDADE_MOCK} 
+                            value={selectedDificuldade}
+                            onValueChange={setSelectedDificuldade}
+                            isMulti={false}
+                        />
+                        <FilterSelect label="Professor Indica" placeholder="Dicas" options={PROFESSOR_INDICA_MOCK} isMulti={false} />
                     </div>
 
                     {/* Barra de Ações Inferior */}
@@ -240,16 +352,16 @@ export function QuestionFilter({ options }: QuestionFilterProps) {
 
                         <div className="flex items-center gap-6">
                             <button 
-                                onClick={() => {
-                                    setActiveFilters([])
-                                    setSelectedConcurso('all')
-                                }}
+                                onClick={clearFilters}
                                 className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 hover:text-red-500 transition-colors"
                             >
                                 <Trash2 className="w-3.5 h-3.5" />
                                 Limpar Filtros
                             </button>
-                            <Button className="bg-slate-900 text-white dark:bg-white dark:text-slate-900 rounded-2xl px-10 h-10 font-black uppercase tracking-[0.2em] shadow-xl hover:scale-105 transition-all flex gap-2">
+                            <Button 
+                                onClick={handleFilter}
+                                className="bg-slate-900 text-white dark:bg-white dark:text-slate-900 rounded-2xl px-10 h-10 font-black uppercase tracking-[0.2em] shadow-xl hover:scale-105 transition-all flex gap-2"
+                            >
                                 <Search className="w-4 h-4" />
                                 Filtrar
                             </Button>

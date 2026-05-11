@@ -85,6 +85,16 @@ enum StatusQuestao {
   @@map("status_questao")
 }
 
+enum StatusImportacaoQuestao {
+  processando
+  validado
+  com_erro
+  importado
+  cancelado
+
+  @@map("status_importacao_questao")
+}
+
 enum StatusDenuncia {
   pendente
   em_analise
@@ -286,6 +296,7 @@ model Usuario {
   simuladosCriados Simulado[]
   tentativasSimul  SimuladoTentativa[]
   configsAtualiz   Configuracao[]
+  importacoesQuestao ImportacaoQuestao[]
   accounts         Account[]
   verifications    Verification[]
 
@@ -1170,6 +1181,29 @@ model SimuladoResposta {
   @@unique([tentativaId, questaoId])
   @@index([tentativaId])
   @@map("simulado_respostas")
+}
+
+model ImportacaoQuestao {
+  id                  String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuarioId           String                  @map("usuario_id") @db.Uuid
+  arquivoNome         String?                 @map("arquivo_nome") @db.VarChar(255)
+  tipoArquivo         String                  @default("texto") @map("tipo_arquivo") @db.VarChar(30)
+  status              StatusImportacaoQuestao @default(processando)
+  totalQuestoes       Int                     @default(0) @map("total_questoes")
+  totalImportadas     Int                     @default(0) @map("total_importadas")
+  totalErros          Int                     @default(0) @map("total_erros")
+  totalAvisos         Int                     @default(0) @map("total_avisos")
+  erros               Json?
+  avisos              Json?
+  criadoEm            DateTime                @default(now()) @map("criado_em")
+  atualizadoEm        DateTime                @default(now()) @updatedAt @map("atualizado_em")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@index([status])
+  @@index([criadoEm])
+  @@map("importacoes_questoes")
 }
 
 model Configuracao {

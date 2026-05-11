@@ -50,6 +50,8 @@ const importedQuestionSchema = z.object({
 
 const importSchema = z.object({
   content: z.string().trim().min(2).max(500_000),
+  fileName: z.string().trim().max(255).optional(),
+  fileType: z.string().trim().max(30).optional(),
   defaults: z.object({
     disciplinaId: z.string().uuid().optional().or(z.literal("")),
     assuntoId: z.string().uuid().optional().or(z.literal("")),
@@ -71,6 +73,20 @@ type ImportQuestionInput = z.infer<typeof importedQuestionSchema>
 
 type Taxonomy = Awaited<ReturnType<typeof getTaxonomy>>
 type ImportDefaults = NonNullable<z.infer<typeof importSchema>["defaults"]>
+type InspectedQuestion = {
+  question: ImportQuestionInput
+  taxonomy: ReturnType<typeof resolveQuestionTaxonomy>
+  alternatives: ReturnType<typeof normalizeAlternatives>
+  preview: {
+    index: number
+    title: string
+    alternatives: number
+    correctLetter: string
+    errors: string[]
+    warnings: string[]
+    infos: string[]
+  }
+}
 
 function normalize(value?: string | null) {
   return (value ?? "")
@@ -508,51 +524,158 @@ function parsePlainTextQuestion(block: string, index: number): ImportQuestionInp
   return parsed.data
 }
 
-export async function importAdminQuestions(values: z.infer<typeof importSchema>) {
-  const autorId = await requireAdmin()
-  const { content, defaults } = importSchema.parse(values)
+function inspectQuestion(question: ImportQuestionInput, index: number, taxonomy: Taxonomy, defaults?: ImportDefaults): InspectedQuestion {
+  const errors: string[] = []
+  const warnings: string[] = []
+  const infos: string[] = []
+  const resolvedTaxonomy = resolveQuestionTaxonomy(question, taxonomy, defaults)
+  let alternatives: ReturnType<typeof normalizeAlternatives> = []
+
+  try {
+    alternatives = normalizeAlternatives(question, index)
+  } catch (error) {
+    errors.push(error instanceof Error ? error.message.replace(`Questão ${index + 1}: `, "") : "Alternativas inválidas.")
+  }
+
+  if (!resolvedTaxonomy.disciplinaId) errors.push("Disciplina obrigatória.")
+  if (!resolvedTaxonomy.tipoId) errors.push("Tipo de questão obrigatório.")
+  if (!question.enunciado.trim()) errors.push("Enunciado obrigatório.")
+
+  if (!question.resolucao?.trim()) warnings.push("Resolução/comentário geral recomendado.")
+  if (alternatives.length > 0 && alternatives.some((alternative) => !alternative.explicacao)) {
+    warnings.push("Explicação por alternativa recomendada.")
+  }
+  if (!question.objetivo?.trim()) infos.push("Objetivo ajuda o aluno a entender a habilidade cobrada.")
+  if (!question.referencia?.trim()) infos.push("Referência melhora a rastreabilidade do conteúdo.")
+
+  return {
+    question,
+    taxonomy: resolvedTaxonomy,
+    alternatives,
+    preview: {
+      index: index + 1,
+      title: question.enunciado.split("\n")[0]?.slice(0, 120) || "Questão sem enunciado",
+      alternatives: question.alternativas.length,
+      correctLetter: question.alternativas.find((alternative) => alternative.correta || alternative.isCorrect)?.letra
+        ?? question.alternativas.find((alternative) => alternative.correta || alternative.isCorrect)?.letter
+        ?? "-",
+      errors,
+      warnings,
+      infos,
+    },
+  }
+}
+
+export async function analyzeAdminQuestionImport(values: z.infer<typeof importSchema>) {
+  const userId = await requireAdmin()
+  const { content, defaults, fileName, fileType } = importSchema.parse(values)
   const questions = parseImportContent(content)
   const taxonomy = await getTaxonomy()
+  const items = questions.map((question, index) => inspectQuestion(question, index, taxonomy, defaults))
+  const errors = items.flatMap((item) => item.preview.errors.map((message) => ({ questao: item.preview.index, message })))
+  const warnings = items.flatMap((item) => item.preview.warnings.map((message) => ({ questao: item.preview.index, message })))
+
+  await prisma.importacaoQuestao.create({
+    data: {
+      usuarioId: userId,
+      arquivoNome: nullable(fileName),
+      tipoArquivo: fileType || "texto",
+      status: errors.length > 0 ? "com_erro" : "validado",
+      totalQuestoes: items.length,
+      totalImportadas: 0,
+      totalErros: errors.length,
+      totalAvisos: warnings.length,
+      erros: errors,
+      avisos: warnings,
+    },
+  })
+
+  return {
+    total: items.length,
+    errors: errors.length,
+    warnings: warnings.length,
+    infos: items.reduce((sum, item) => sum + item.preview.infos.length, 0),
+    items: items.map((item) => item.preview),
+  }
+}
+
+export async function importAdminQuestions(values: z.infer<typeof importSchema>) {
+  const autorId = await requireAdmin()
+  const { content, defaults, fileName, fileType } = importSchema.parse(values)
+  const questions = parseImportContent(content)
+  const taxonomy = await getTaxonomy()
+  const inspected = questions.map((question, index) => inspectQuestion(question, index, taxonomy, defaults))
+  const blockingErrors = inspected.flatMap((item) => item.preview.errors.map((error) => `Questão ${item.preview.index}: ${error}`))
+  const warnings = inspected.flatMap((item) => item.preview.warnings.map((message) => ({ questao: item.preview.index, message })))
+
+  if (blockingErrors.length > 0) {
+    await prisma.importacaoQuestao.create({
+      data: {
+        usuarioId: autorId,
+        arquivoNome: nullable(fileName),
+        tipoArquivo: fileType || "texto",
+        status: "com_erro",
+        totalQuestoes: inspected.length,
+        totalImportadas: 0,
+        totalErros: blockingErrors.length,
+        totalAvisos: warnings.length,
+        erros: blockingErrors,
+        avisos: warnings,
+      },
+    })
+    throw new Error(blockingErrors.slice(0, 3).join(" "))
+  }
 
   const prepared = await Promise.all(
-    questions.map(async (question, index) => ({
-      question,
-      taxonomy: resolveQuestionTaxonomy(question, taxonomy, defaults),
-      alternatives: normalizeAlternatives(question, index),
+    inspected.map(async (item) => ({
+      ...item,
       code: await generateQuestionCode(),
     }))
   )
 
-  await prisma.$transaction(
-    prepared.map((item) =>
+  await prisma.$transaction([
+    prisma.importacaoQuestao.create({
+      data: {
+        usuarioId: autorId,
+        arquivoNome: nullable(fileName),
+        tipoArquivo: fileType || "texto",
+        status: "importado",
+        totalQuestoes: prepared.length,
+        totalImportadas: prepared.length,
+        totalErros: 0,
+        totalAvisos: warnings.length,
+        avisos: warnings,
+      },
+    }),
+    ...prepared.map((item) =>
       prisma.questao.create({
-        data: {
-          code: item.code,
-          ...item.taxonomy,
-          instituicao: nullable(item.question.instituicao),
-          cargo: nullable(item.question.cargo ?? defaults?.cargo),
-          ano: item.question.ano ?? (defaults?.year ? Number(defaults.year) : null),
-          isInedita: item.question.inedita ?? item.question.isInedita ?? defaults?.isUnique === "sim",
-          enunciado: item.question.enunciado,
-          textoApoio: nullable(item.question.textoApoio),
-          resolucao: nullable(item.question.resolucao),
-          hasVideo: Boolean(item.question.videoUrl),
-          visibilidade: "publica",
-          status: "draft",
-          autorId,
-          alternativas: {
-            create: item.alternatives.map((alternative) => ({
-              ...alternative,
-              dica: alternative.dica ?? nullable(item.question.dica),
-            })),
+          data: {
+            code: item.code,
+            ...item.taxonomy,
+            instituicao: nullable(item.question.instituicao),
+            cargo: nullable(item.question.cargo ?? defaults?.cargo),
+            ano: item.question.ano ?? (defaults?.year ? Number(defaults.year) : null),
+            isInedita: item.question.inedita ?? item.question.isInedita ?? defaults?.isUnique === "sim",
+            enunciado: item.question.enunciado,
+            textoApoio: nullable(item.question.textoApoio),
+            resolucao: nullable(item.question.resolucao),
+            hasVideo: Boolean(item.question.videoUrl),
+            visibilidade: "publica",
+            status: "draft",
+            autorId,
+            alternativas: {
+              create: item.alternatives.map((alternative) => ({
+                ...alternative,
+                dica: alternative.dica ?? nullable(item.question.dica),
+              })),
+            },
+            objetivos: item.question.objetivo ? { create: [{ descricao: item.question.objetivo }] } : undefined,
+            referencias: item.question.referencia ? { create: [{ texto: item.question.referencia }] } : undefined,
+            videos: item.question.videoUrl ? { create: [{ titulo: "Videoaula", url: item.question.videoUrl }] } : undefined,
           },
-          objetivos: item.question.objetivo ? { create: [{ descricao: item.question.objetivo }] } : undefined,
-          referencias: item.question.referencia ? { create: [{ texto: item.question.referencia }] } : undefined,
-          videos: item.question.videoUrl ? { create: [{ titulo: "Videoaula", url: item.question.videoUrl }] } : undefined,
-        },
-      })
-    )
-  )
+        })
+    ),
+  ])
 
   revalidatePath("/admin/questoes")
   revalidatePath("/admin/questoes/importar")
