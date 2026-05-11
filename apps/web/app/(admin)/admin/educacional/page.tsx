@@ -29,7 +29,7 @@ export default async function EducacionalPage() {
     return (
         <EducacionalList
             items={items}
-            createAction={<CreateEducacionalModal />}
+            createAction={<CreateEducacionalModal key="create-educacional" />}
             onDelete={handleDelete}
         />
     )

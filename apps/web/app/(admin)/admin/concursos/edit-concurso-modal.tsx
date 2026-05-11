@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Plus, GraduationCap, Building2, Briefcase, Calendar, Info, UserCircle, Camera, Loader2, Trash2 } from "lucide-react"
+import { GraduationCap, Building2, Briefcase, Calendar, Info, UserCircle, Camera, Loader2, Trash2, Save } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import {
   Dialog,
@@ -9,7 +9,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogClose
 } from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
@@ -21,31 +20,44 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select"
-import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar"
 import { FilterSelect } from "@/components/questoes/filter/filter-select"
-import { createConcursoInline } from "@/actions/admin-taxonomy"
+import { updateConcurso } from "@/actions/admin-taxonomy"
 import { uploadToR2 } from "@/actions/upload"
 import { toast } from "sonner"
 
-type CreateConcursoModalProps = {
+type EditConcursoModalProps = {
+  item: {
+    id: string
+    nome: string
+    sigla: string | null
+    cargo: string | null
+    bancaId: string | null
+    carreiraId: string | null
+    nivelId: string | null
+    ano: number | null
+    status: "aberto" | "previsto" | "encerrado"
+    logoUrl: string | null
+    ativo: boolean
+  }
   bancas: { id: string; nome: string; sigla: string }[]
   carreiras: { id: string; nome: string }[]
   niveis: { id: string; nome: string }[]
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }
 
-export function CreateConcursoModal({ bancas, carreiras, niveis }: CreateConcursoModalProps) {
-  const [open, setOpen] = React.useState(false)
+export function EditConcursoModal({ item, bancas, carreiras, niveis, open, onOpenChange }: EditConcursoModalProps) {
   const [isPending, startTransition] = React.useTransition()
   const [isUploading, setIsUploading] = React.useState(false)
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = React.useState("")
+  const [previewUrl, setPreviewUrl] = React.useState(item.logoUrl || "")
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
-  // Estados para os seletores (usando FilterSelect)
-  const [selectedBanca, setSelectedBanca] = React.useState("")
-  const [selectedCarreira, setSelectedCarreira] = React.useState("")
-  const [selectedNivel, setSelectedNivel] = React.useState("")
-  const [selectedStatus, setSelectedStatus] = React.useState<"aberto" | "previsto" | "encerrado">("previsto")
+  // Estados para os seletores
+  const [selectedBanca, setSelectedBanca] = React.useState(item.bancaId || "")
+  const [selectedCarreira, setSelectedCarreira] = React.useState(item.carreiraId || "")
+  const [selectedNivel, setSelectedNivel] = React.useState(item.nivelId || "")
+  const [selectedStatus, setSelectedStatus] = React.useState<"aberto" | "previsto" | "encerrado">(item.status)
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -65,7 +77,7 @@ export function CreateConcursoModal({ bancas, carreiras, niveis }: CreateConcurs
     const formData = new FormData(e.currentTarget)
     
     startTransition(async () => {
-      let finalLogoUrl = ""
+      let finalLogoUrl = item.logoUrl || ""
 
       if (selectedFile) {
         setIsUploading(true)
@@ -77,7 +89,7 @@ export function CreateConcursoModal({ bancas, carreiras, niveis }: CreateConcurs
         if (result.success && result.url) {
           finalLogoUrl = result.url
         } else {
-          toast.error("Erro ao enviar imagem, salvando sem logo.")
+          toast.error("Erro ao enviar imagem, mantendo a anterior ou sem logo.")
         }
         setIsUploading(false)
       }
@@ -100,38 +112,23 @@ export function CreateConcursoModal({ bancas, carreiras, niveis }: CreateConcurs
         logoUrl: finalLogoUrl || undefined,
       }
       
-      await createConcursoInline(data)
-      setOpen(false)
-      setSelectedFile(null)
-      setPreviewUrl("")
-      setSelectedBanca("")
-      setSelectedCarreira("")
-      setSelectedNivel("")
-      toast.success("Concurso criado com sucesso!")
+      try {
+        await updateConcurso(item.id, data)
+        toast.success("Concurso atualizado com sucesso!")
+        onOpenChange(false)
+      } catch (error) {
+        toast.error("Erro ao atualizar concurso.")
+      }
     })
   }
 
   return (
-    <Dialog open={open} onOpenChange={(val) => {
-      setOpen(val)
-      if (!val) {
-        setPreviewUrl("")
-        setSelectedFile(null)
-      }
-    }}>
-      <DialogTrigger 
-        render={
-          <Button className="gap-2 shadow-lg hover:scale-[1.02] transition-transform font-semibold">
-            <Plus className="w-4 h-4" />
-            Novo Concurso
-          </Button>
-        }
-      />
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[650px]">
         <DialogHeader>
-          <DialogTitle>Cadastrar Novo Concurso</DialogTitle>
+          <DialogTitle>Editar Concurso</DialogTitle>
           <DialogDescription>
-            Preencha os dados do certame para organizar as questões e simulados.
+            Atualize as informações do certame.
           </DialogDescription>
         </DialogHeader>
         
@@ -175,7 +172,7 @@ export function CreateConcursoModal({ bancas, carreiras, niveis }: CreateConcurs
               )}
             </div>
             <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-              Logo do Órgão (Opcional)
+              Logo do Órgão
             </p>
             <input 
               type="file" 
@@ -190,7 +187,7 @@ export function CreateConcursoModal({ bancas, carreiras, niveis }: CreateConcurs
             <div className="space-y-2">
               <FilterSelect 
                 label="Órgão / Instituição"
-                placeholder="Pesquar órgão..."
+                placeholder="Pesquisar órgão..."
                 options={carreiras.map(c => ({ label: c.nome, value: c.id }))}
                 value={selectedCarreira}
                 onValueChange={setSelectedCarreira}
@@ -203,7 +200,7 @@ export function CreateConcursoModal({ bancas, carreiras, niveis }: CreateConcurs
                 <UserCircle className="w-3.5 h-3.5 text-muted-foreground" />
                 Cargo
               </Label>
-              <Input name="cargo" placeholder="Ex: Agente, Delegado..." className="w-full h-9" />
+              <Input name="cargo" defaultValue={item.cargo || ""} placeholder="Ex: Agente, Delegado..." className="w-full h-9" />
             </div>
 
             <div className="space-y-2">
@@ -233,10 +230,10 @@ export function CreateConcursoModal({ bancas, carreiras, niveis }: CreateConcurs
                 <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
                 Ano
               </Label>
-              <Input name="ano" type="number" placeholder="Ex: 2024" min={1900} max={2100} className="w-full h-9" />
+              <Input name="ano" type="number" defaultValue={item.ano || ""} placeholder="Ex: 2024" min={1900} max={2100} className="w-full h-9" />
             </div>
 
-            <div className="space-y-2">
+            <div className=" space-y-2">
               <Label className="text-xs font-semibold">Status do Certame</Label>
               <Select value={selectedStatus} onValueChange={(v) => setSelectedStatus(v as any)}>
                 <SelectTrigger className="w-full bg-background h-9">
@@ -256,7 +253,17 @@ export function CreateConcursoModal({ bancas, carreiras, niveis }: CreateConcurs
               Cancelar
             </DialogClose>
             <Button type="submit" disabled={isPending || isUploading} className="px-8 font-bold">
-              {isPending ? "Salvando..." : "Salvar Concurso"}
+              {isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Salvar Alterações
+                </>
+              )}
             </Button>
           </div>
         </form>

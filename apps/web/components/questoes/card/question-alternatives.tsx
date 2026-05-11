@@ -1,13 +1,11 @@
 "use client"
 
 import { CheckCircle2, X } from "lucide-react"
-import { Progress } from "@workspace/ui/components/progress"
 
 interface Alternative {
     letter: string
     text: string
     isCorrect: boolean
-    percentage?: number // Novo campo para as estatísticas
 }
 
 interface QuestionAlternativesProps {
@@ -16,6 +14,9 @@ interface QuestionAlternativesProps {
     isSubmitted: boolean
     isProfessor: boolean
     excludedOptions: string[]
+    hideExclude?: boolean
+    hideLetter?: boolean
+    smallText?: boolean
     onSelect: (letter: string) => void
     onToggleExclude: (e: React.MouseEvent, letter: string) => void
 }
@@ -26,11 +27,14 @@ export function QuestionAlternatives({
     isSubmitted,
     isProfessor,
     excludedOptions,
+    hideExclude,
+    hideLetter,
+    smallText,
     onSelect,
     onToggleExclude
 }: QuestionAlternativesProps) {
     return (
-        <div className="space-y-4">
+        <div className={smallText ? "space-y-1" : "space-y-4"}>
             {alternatives.map((alt, i) => {
                 const isSelected = selectedOption === alt.letter
                 const isExcluded = excludedOptions.includes(alt.letter)
@@ -39,25 +43,39 @@ export function QuestionAlternatives({
                 const showWrong = isSubmitted && isSelected && !isCorrect
 
                 return (
-                    <div key={i} className="group flex flex-col gap-2">
-                        <div className="flex items-center gap-2">
-                            {!isSubmitted && !isProfessor && (
-                                <button
-                                    onClick={(e) => onToggleExclude(e, alt.letter)}
-                                    className={`p-2 rounded-full transition-all border-2 shrink-0 ${
-                                        isExcluded 
-                                            ? "bg-red-500 text-white border-red-500" 
-                                            : "text-muted-foreground border-transparent hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20"
-                                    }`}
-                                    title="Descartar alternativa"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
-                            )}
+                    <div key={i} className="group flex items-center gap-2">
+                        {!isSubmitted && !isProfessor && !hideExclude && (
+                            <button
+                                onClick={(e) => onToggleExclude(e, alt.letter)}
+                                className={`p-1 rounded-full transition-all border shrink-0 ${
+                                    isExcluded 
+                                        ? "bg-red-500 text-white border-red-500" 
+                                        : "text-muted-foreground border-transparent hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20"
+                                }`}
+                                title="Descartar alternativa"
+                            >
+                                <X className="w-3 h-3" />
+                            </button>
+                        )}
 
-                            <div
-                                onClick={() => onSelect(alt.letter)}
-                                className={`flex-1 flex flex-col gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                        <div
+                            onClick={() => onSelect(alt.letter)}
+                            className={`flex-1 flex items-center gap-2.5 transition-all cursor-pointer ${
+                                smallText 
+                                ? `py-0.5 ${
+                                    isSubmitted
+                                        ? showCorrect
+                                            ? "text-green-700 dark:text-green-400 font-bold"
+                                            : showWrong
+                                                ? "text-red-700 dark:text-red-400 font-bold"
+                                                : "opacity-40"
+                                        : isSelected
+                                            ? "text-foreground font-semibold"
+                                            : isExcluded
+                                                ? "opacity-30 grayscale"
+                                                : "hover:text-foreground text-foreground/70"
+                                  }`
+                                : `p-4 border-2 rounded-xl ${
                                     isSubmitted
                                         ? showCorrect
                                             ? "bg-green-500/10 border-green-500/50 dark:bg-green-500/5"
@@ -65,53 +83,32 @@ export function QuestionAlternatives({
                                                 ? "bg-red-500/10 border-red-500/50 dark:bg-red-500/5"
                                                 : "opacity-60 border-transparent bg-muted/20"
                                         : isSelected
-                                            ? "border-border/50 bg-transparent" // Mantém a borda e fundo neutros
+                                            ? "border-border/50 bg-transparent shadow-sm"
                                             : isExcluded
                                                 ? "opacity-40 grayscale border-transparent bg-muted/10"
                                                 : "border-border/50 hover:border-primary/30 hover:bg-muted/30"
-                                }`}
-                            >
-                                <div className="flex items-start justify-between gap-4">
-                                    <div className="flex items-start gap-4">
-                                        <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-sm font-black border-2 transition-all ${
-                                            isSubmitted
-                                                ? showCorrect
-                                                    ? "bg-green-500 text-white border-green-500"
-                                                    : showWrong
-                                                        ? "bg-red-500 text-white border-red-500"
-                                                        : "bg-muted text-muted-foreground border-border"
-                                                : isSelected
-                                                    ? "bg-slate-900 text-white border-slate-900 dark:bg-slate-50 dark:text-slate-900 dark:border-slate-50 shadow-md"
-                                                    : "bg-background text-muted-foreground border-muted-foreground/20 group-hover:border-primary/50"
-                                        }`}>
-                                            {isSubmitted && showCorrect ? <CheckCircle2 className="w-4 h-4" /> : alt.letter}
-                                        </div>
-                                        <div 
-                                            className={`text-base leading-relaxed transition-colors ${
-                                                isSelected ? "text-foreground font-semibold" : "text-foreground/70"
-                                            } ${isProfessor && isCorrect ? "font-bold text-green-700 dark:text-green-400" : ""} ${isExcluded ? "line-through opacity-50" : ""}`}
-                                            dangerouslySetInnerHTML={{ __html: alt.text }}
-                                        />
-                                    </div>
-
-                                    {/* Porcentagem no topo, à direita */}
-                                    {(isSubmitted || isProfessor) && alt.percentage !== undefined && (
-                                        <span className="text-[10px] font-black tracking-widest text-muted-foreground/60 shrink-0 mt-1">
-                                            {alt.percentage}%
-                                        </span>
-                                    )}
-                                </div>
-
-                                {/* Barra de Estatística bem colada */}
-                                {(isSubmitted || isProfessor) && alt.percentage !== undefined && (
-                                    <div className="ml-11 -mt-1 animate-in fade-in duration-500">
-                                        <Progress 
-                                            value={alt.percentage} 
-                                            className={`h-1 ${isCorrect ? "[&>div]:bg-green-500" : "[&>div]:bg-muted-foreground/30"}`} 
-                                        />
-                                    </div>
-                                )}
+                                }`
+                            }`}
+                        >
+                            <div className={`flex ${smallText ? 'h-4.5 w-4.5' : 'h-7 w-7'} shrink-0 items-center justify-center rounded-full text-[9px] font-black border transition-all ${
+                                isSubmitted
+                                    ? showCorrect
+                                        ? "bg-green-600 text-white border-green-600"
+                                        : showWrong
+                                            ? "bg-red-600 text-white border-red-600"
+                                            : "bg-muted text-muted-foreground border-border"
+                                    : isSelected
+                                        ? "bg-primary text-primary-foreground border-primary"
+                                        : "bg-transparent text-muted-foreground border-muted-foreground/40"
+                            }`}>
+                                {isSubmitted && showCorrect ? <CheckCircle2 className="w-2.5 h-2.5" /> : (hideLetter ? null : alt.letter)}
                             </div>
+                            <div 
+                                className={`leading-tight transition-colors ${smallText ? 'text-[13px]' : 'text-base'} ${
+                                    isExcluded ? "line-through opacity-50" : ""
+                                } break-words whitespace-normal flex-1`}
+                                dangerouslySetInnerHTML={{ __html: alt.text }}
+                            />
                         </div>
                     </div>
                 )

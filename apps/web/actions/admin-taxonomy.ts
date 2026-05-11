@@ -195,6 +195,15 @@ export async function createSubtopico(formData: FormData) {
   redirect("/admin/assuntos")
 }
 
+export async function updateDisciplina(id: string, data: { nome?: string, sigla?: string, ativo?: boolean }) {
+  await requireAdmin()
+  await prisma.disciplina.update({
+    where: { id },
+    data
+  })
+  revalidatePath("/admin/disciplinas")
+}
+
 export async function deleteDisciplina(id: string) {
   await requireAdmin()
   await prisma.disciplina.delete({ where: { id } })
@@ -257,11 +266,12 @@ export async function createAssuntoInline(disciplinaId: string, nome: string) {
   revalidatePath("/admin/assuntos")
 }
 
-export async function createCarreiraInline(nome: string, descricao?: string, iconUrl?: string) {
+export async function createCarreiraInline(nome: string, parentId?: string, descricao?: string, iconUrl?: string) {
   await requireAdmin()
   await prisma.carreira.create({
     data: {
       nome,
+      parentId: parentId || null,
       descricao: descricao || null,
       iconUrl: iconUrl || null,
       ativo: true
@@ -274,6 +284,28 @@ export async function deleteCarreira(id: string) {
   await requireAdmin()
   await prisma.carreira.delete({ where: { id } })
   revalidatePath("/admin/carreiras")
+}
+
+export async function updateCarreira(id: string, data: { nome?: string, descricao?: string, iconUrl?: string }) {
+  await requireAdmin()
+  await prisma.carreira.update({
+    where: { id },
+    data: {
+      ...data,
+      descricao: data.descricao || null,
+      iconUrl: data.iconUrl || null,
+    }
+  })
+  revalidatePath("/admin/carreiras")
+}
+
+export async function updateDificuldade(id: string, data: { nome?: string, slug?: string, ativo?: boolean }) {
+  await requireAdmin()
+  await prisma.dificuldade.update({
+    where: { id },
+    data
+  })
+  revalidatePath("/admin/dificuldade")
 }
 
 export async function createDificuldadeInline(nome: string, slug: string) {
@@ -292,6 +324,19 @@ export async function deleteDificuldade(id: string) {
   await requireAdmin()
   await prisma.dificuldade.delete({ where: { id } })
   revalidatePath("/admin/dificuldade")
+}
+
+export async function updateBanca(id: string, data: { nome?: string, sigla?: string, descricao?: string, ativo?: boolean }) {
+  await requireAdmin()
+  await prisma.banca.update({
+    where: { id },
+    data: {
+      ...data,
+      sigla: data.sigla?.toUpperCase(),
+      descricao: data.descricao || null,
+    }
+  })
+  revalidatePath("/admin/bancas")
 }
 
 export async function createBancaInline(nome: string, sigla: string, descricao?: string) {
@@ -334,6 +379,33 @@ export async function createConcursoInline(data: {
   revalidatePath("/admin/concursos")
 }
 
+export async function updateConcurso(id: string, data: {
+  nome: string
+  sigla?: string
+  cargo?: string
+  bancaId?: string
+  carreiraId?: string
+  nivelId?: string
+  ano?: number
+  status: "aberto" | "previsto" | "encerrado"
+  logoUrl?: string
+  ativo?: boolean
+}) {
+  await requireAdmin()
+  await prisma.concurso.update({
+    where: { id },
+    data: {
+      ...data,
+      bancaId: data.bancaId || null,
+      carreiraId: data.carreiraId || null,
+      nivelId: data.nivelId || null,
+      ano: data.ano || null,
+      logoUrl: data.logoUrl || null,
+    }
+  })
+  revalidatePath("/admin/concursos")
+}
+
 export async function deleteConcurso(id: string) {
   await requireAdmin()
   await prisma.concurso.delete({ where: { id } })
@@ -358,6 +430,15 @@ export async function deleteTipoQuestao(id: string) {
   await requireAdmin()
   await prisma.tipoQuestao.delete({ where: { id } })
   revalidatePath("/admin/tipos-questao")
+}
+
+export async function updateEducacional(id: string, data: { nome?: string, ativo?: boolean }) {
+  await requireAdmin()
+  await prisma.nivelEducacional.update({
+    where: { id },
+    data
+  })
+  revalidatePath("/admin/educacional")
 }
 
 export async function createEducacionalInline(nome: string) {

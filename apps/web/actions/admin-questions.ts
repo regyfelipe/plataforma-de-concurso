@@ -225,3 +225,13 @@ export async function updateAdminQuestion(id: string, payload: CreateQuestionPay
 
   return questao
 }
+
+export async function deleteAdminQuestion(id: string) {
+  await requireAdmin()
+  
+  await prisma.questao.delete({
+    where: { id }
+  })
+
+  revalidatePath("/admin/questoes")
+}

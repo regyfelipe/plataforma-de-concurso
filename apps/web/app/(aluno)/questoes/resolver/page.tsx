@@ -35,7 +35,13 @@ function uniqueOptions<T>(
   return Array.from(map, ([value, label]) => ({ value, label }))
 }
 
-export default async function Page() {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ notebookId?: string }>
+}) {
+  const { notebookId } = await searchParams
+
   const [
     questoes,
     disciplinas,
@@ -46,14 +52,23 @@ export default async function Page() {
     carreiras,
     niveis,
     dificuldades,
+    notebook,
   ] = await Promise.all([
     prisma.questao.findMany({
-      where: {
-        status: "published",
-        visibilidade: "publica",
-      },
+      where: notebookId
+        ? {
+            cadernos: {
+              some: {
+                cadernoId: notebookId,
+              },
+            },
+          }
+        : {
+            status: "published",
+            visibilidade: "publica",
+          },
       orderBy: { criadoEm: "desc" },
-      take: 10,
+      take: notebookId ? undefined : 20,
       include: {
         disciplina: { select: { nome: true } },
         assunto: { select: { nome: true } },
@@ -98,7 +113,7 @@ export default async function Page() {
     prisma.carreira.findMany({
       where: { ativo: true },
       orderBy: { nome: "asc" },
-      select: { id: true, nome: true },
+      select: { id: true, nome: true, parentId: true },
     }),
     prisma.nivelEducacional.findMany({
       where: { ativo: true },
@@ -110,6 +125,7 @@ export default async function Page() {
       orderBy: { nome: "asc" },
       select: { id: true, nome: true, slug: true },
     }),
+    notebookId ? prisma.caderno.findUnique({ where: { id: notebookId } }) : null,
   ])
 
   const questions = questoes.map((questao) => ({
@@ -185,6 +201,7 @@ export default async function Page() {
     carreiras: carreiras.map((carreira) => ({
       label: carreira.nome,
       value: carreira.id,
+      parentId: carreira.parentId,
     })),
     cargos: uniqueOptions(concursos.filter(c => c.cargo), (c) => c.cargo, (c) => c.cargo),
     escolaridades: niveis.map((nivel) => ({
@@ -199,16 +216,18 @@ export default async function Page() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 pt-6 max-w-7xl mx-auto w-full">
-      <div className="flex flex-col gap-2">
-        {/* <h1 className="text-3xl font-bold tracking-tight">Resolver Questões</h1> */}
-        {/* <p className="text-muted-foreground">
-          Pratique com nossa base de questões atualizadas e comentadas.
-        </p> */}
-      </div>
+    <div className="flex flex-1 flex-col gap-6 pt-6 max-w-7xl mx-auto w-full px-4">
+      {notebook ? (
+        <div className="flex flex-col gap-1 px-4 py-6 bg-muted/10 rounded-2xl border border-border/40 animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="flex items-center gap-2 text-primary font-black uppercase text-[10px] tracking-widest">
+             Caderno de Questões
+          </div>
+          <h1 className="text-2xl font-black tracking-tight uppercase">{notebook.nome}</h1>
+          <p className="text-xs text-muted-foreground font-medium uppercase">{questions.length} questões disponíveis para resolução</p>
+        </div>
+      ) : null}
 
-      {/* Componente de Filtro adicionado aqui */}
-      <QuestionFilter options={filterOptions} />
+      {!notebookId && <QuestionFilter options={filterOptions} />}
 
       <div className="grid gap-6">
         {questions.length > 0 ? (
@@ -217,15 +236,15 @@ export default async function Page() {
           ))
         ) : (
           <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 px-6 py-16 text-center">
-            <p className="text-sm font-semibold text-foreground">Nenhuma questão publicada disponível.</p>
-            <p className="mt-1 text-sm text-muted-foreground">Assim que novas questões forem publicadas, elas aparecerão aqui.</p>
+            <p className="text-sm font-semibold text-foreground">Nenhuma questão encontrada.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Assim que novas questões forem adicionadas, elas aparecerão aqui.</p>
           </div>
         )}
       </div>
 
       <div className="flex justify-center py-8">
-        <p className="text-sm text-muted-foreground italic">
-          Você chegou ao fim da lista inicial. Use os filtros para encontrar mais questões.
+        <p className="text-sm text-muted-foreground italic text-center">
+          {notebookId ? "Fim do caderno de questões." : "Você chegou ao fim da lista inicial. Use os filtros para encontrar mais questões."}
         </p>
       </div>
     </div>

@@ -24,7 +24,11 @@ export default async function ConcursosPage() {
     const items = concursos.map((item) => ({
         id: item.id,
         nome: item.nome,
-        cargo: item.cargo || undefined,
+        sigla: item.sigla,
+        cargo: item.cargo,
+        bancaId: item.bancaId,
+        carreiraId: item.carreiraId,
+        nivelId: item.nivelId,
         banca: item.banca?.sigla,
         carreira: item.carreira?.nome,
         nivel: item.nivel?.nome,
@@ -46,12 +50,16 @@ export default async function ConcursosPage() {
             items={items}
             createAction={
                 <CreateConcursoModal 
+                    key="create-concurso"
                     bancas={bancas.map(b => ({ id: b.id, nome: b.nome, sigla: b.sigla }))} 
                     carreiras={carreiras.map(c => ({ id: c.id, nome: c.nome }))}
                     niveis={niveis.map(n => ({ id: n.id, nome: n.nome }))}
                 />
             }
             onDelete={handleDelete}
+            bancas={bancas.map(b => ({ id: b.id, nome: b.nome, sigla: b.sigla }))}
+            carreiras={carreiras.map(c => ({ id: c.id, nome: c.nome }))}
+            niveis={niveis.map(n => ({ id: n.id, nome: n.nome }))}
         />
     )
 }

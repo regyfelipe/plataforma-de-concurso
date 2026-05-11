@@ -17,7 +17,7 @@ export default function CriarCarreiraPage() {
     const [nome, setNome] = React.useState("")
 
     return (
-        <div className="flex-1 space-y-6 p-8 pt-6 bg-background max-w-7xl mx-auto w-full">
+        <div className="flex-1 space-y-6 p-8 pt-6 bg-background max-w-8xl mx-auto w-full">
             
             {/* Header */}
             <div className="space-y-1">

@@ -1,11 +1,26 @@
 "use client"
 
-import { useState } from "react"
-import { X, Filter, Trash2, Edit2, Copy } from "lucide-react"
+import { useState, useTransition } from "react"
+import { X, Filter, Trash2, Edit2, AlertTriangle, Loader2 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Badge } from "@workspace/ui/components/badge"
 import Link from "next/link"
 import { QuestionCard } from "@/components/questoes/card"
+import { deleteAdminQuestion } from "@/actions/admin-questions"
+import { toast } from "sonner"
+
+
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@workspace/ui/components/alert-dialog"
 
 type AdminQuestion = React.ComponentProps<typeof QuestionCard>["question"] & {
     access?: string
@@ -31,6 +46,22 @@ export function AdminQuestionsList({ questions, totalPages }: AdminQuestionsList
         ].filter((filter): filter is string => Boolean(filter))
         : []
     const [activeFilters, setActiveFilters] = useState(initialFilters)
+    const [deletingId, setDeletingId] = useState<string | null>(null)
+    const [isPending, startTransition] = useTransition()
+
+    const handleDelete = async (id: string) => {
+        setDeletingId(id)
+        startTransition(async () => {
+            try {
+                await deleteAdminQuestion(id)
+                toast.success("Questão excluída com sucesso!")
+            } catch (error) {
+                toast.error("Erro ao excluir questão.")
+            } finally {
+                setDeletingId(null)
+            }
+        })
+    }
 
     const removeFilter = (filter: string) => {
         setActiveFilters(prev => prev.filter(f => f !== filter))
@@ -100,9 +131,49 @@ export function AdminQuestionsList({ questions, totalPages }: AdminQuestionsList
                                             <Edit2 className="w-3 h-3 mr-2" /> Editar
                                         </Button>
                                     </Link>
-                                    <Button variant="outline" size="sm" className="h-8 rounded-lg bg-background/80 backdrop-blur border-border/60 text-[9px] font-black uppercase tracking-widest hover:border-primary/40 hover:text-primary">
-                                        <Copy className="w-3 h-3 mr-2" /> Duplicar
-                                    </Button>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger 
+                                            render={
+                                                <Button variant="outline" size="sm" className="h-8 rounded-lg bg-background/80 backdrop-blur border-border/60 text-[9px] font-black uppercase tracking-widest hover:border-destructive/40 hover:text-destructive">
+                                                    <Trash2 className="w-3 h-3 mr-2" /> Apagar
+                                                </Button>
+                                            }
+                                        />
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center text-destructive">
+                                                        <AlertTriangle className="w-5 h-5" />
+                                                    </div>
+                                                    <AlertDialogTitle>Excluir Questão?</AlertDialogTitle>
+                                                </div>
+                                                <AlertDialogDescription>
+                                                    Você está prestes a excluir esta questão permanentemente.
+                                                    Esta ação não pode ser desfeita.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter className="mt-4">
+                                                <AlertDialogCancel disabled={isPending}>Cancelar</AlertDialogCancel>
+                                                <AlertDialogAction 
+                                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90 min-w-[140px]"
+                                                    onClick={(e) => {
+                                                        e.preventDefault()
+                                                        handleDelete(q.id)
+                                                    }}
+                                                    disabled={isPending}
+                                                >
+                                                    {deletingId === q.id ? (
+                                                        <>
+                                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                            Excluindo...
+                                                        </>
+                                                    ) : (
+                                                        "Confirmar Exclusão"
+                                                    )}
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
                                 </div>
 
                                 {/* O Card que o aluno vê, mas com poder de Admin liberado */}

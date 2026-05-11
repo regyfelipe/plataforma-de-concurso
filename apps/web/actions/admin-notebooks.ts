@@ -12,11 +12,8 @@ const optionalUuid = z.string().uuid().optional().or(z.literal(""))
 const createAdminNotebookSchema = z.object({
   nome: z.string().trim().min(3, "Informe um título com pelo menos 3 caracteres.").max(200),
   descricao: z.string().trim().optional(),
-  carreiraId: optionalUuid,
   concursoId: optionalUuid,
   disciplinaId: optionalUuid,
-  dificuldadeId: optionalUuid,
-  anoReferencia: z.number().int().min(1900).max(2100).optional().nullable(),
   visibilidade: z.enum(["privado", "publico"]),
   capaUrl: z.string().trim().url("URL da capa inválida.").optional().or(z.literal("")),
   questionIds: z.array(z.string().uuid()).default([]),
@@ -61,15 +58,12 @@ export async function createAdminNotebook(payload: CreateAdminNotebookPayload) {
   const caderno = await prisma.caderno.create({
     data: {
       usuarioId,
-      carreiraId: nullableId(data.carreiraId),
       concursoId: nullableId(data.concursoId),
       disciplinaId: nullableId(data.disciplinaId),
-      dificuldadeId: nullableId(data.dificuldadeId),
       nome: data.nome,
       descricao: nullable(data.descricao),
       visibilidade: data.visibilidade,
       capaUrl: nullable(data.capaUrl),
-      anoReferencia: data.anoReferencia ?? null,
       questoes: {
         create: data.questionIds.map((questaoId, index) => ({
           questaoId,
@@ -97,14 +91,11 @@ export async function updateAdminNotebook(id: string, payload: UpdateAdminNotebo
     const updated = await tx.caderno.update({
       where: { id: notebookId },
       data: {
-        carreiraId: nullableId(data.carreiraId),
         concursoId: nullableId(data.concursoId),
         disciplinaId: nullableId(data.disciplinaId),
-        dificuldadeId: nullableId(data.dificuldadeId),
         nome: data.nome,
         descricao: nullable(data.descricao),
         visibilidade: data.visibilidade,
-        anoReferencia: data.anoReferencia ?? null,
       },
       select: { id: true },
     })
@@ -130,4 +121,16 @@ export async function updateAdminNotebook(id: string, payload: UpdateAdminNotebo
   revalidatePath(`/admin/cadernos/editar/${notebookId}`)
 
   return caderno
+}
+
+export async function deleteAdminNotebook(id: string) {
+  await requireAdmin()
+
+  const notebookId = z.string().uuid().parse(id)
+
+  await prisma.caderno.delete({
+    where: { id: notebookId },
+  })
+
+  revalidatePath("/admin/cadernos")
 }

@@ -147,78 +147,51 @@ const navAdmin = [
   },
   {
     title: "Disciplinas",
-    url: "#",
+    url: "/admin/disciplinas",
     icon: IconBook,
-    items: [
-      { title: "Listar Disciplinas", url: "/admin/disciplinas" },
-      { title: "Criar Disciplina", url: "/admin/disciplinas/criar" },
-
-    ],
+    
   },
   {
     title: "Carreiras",
-    url: "#",
+    url: "/admin/carreiras",
     icon: IconBriefcase,
-    items: [
-      { title: "Listar Carreiras", url: "/admin/carreiras" },
-      { title: "Criar Carreira", url: "/admin/carreiras/criar" },
-    ],
+    
   },
   {
     title: "Níveis de Dificuldade",
-    url: "#",
+    url: "/admin/dificuldade",
     icon: IconSignal4g,
-    items: [
-      { title: "Listar Níveis", url: "/admin/dificuldade" },
-      { title: "Criar Nível", url: "/admin/dificuldade/criar" },
-    ],
+
   },
   {
     title: "Níveis Educacionais",
-    url: "#",
+    url: "/admin/educacional",
     icon: IconSchool,
-    items: [
-      { title: "Listar Níveis", url: "/admin/educacional" },
-      { title: "Criar Nível", url: "/admin/educacional/criar" },
-    ],
+  
   },
   {
     title: "Bancas Examinadoras",
-    url: "#",
+    url: "/admin/bancas",
     icon: IconBuildingBank,
-    items: [
-      { title: "Listar Bancas", url: "/admin/bancas" },
-      { title: "Criar Banca", url: "/admin/bancas/criar" },
-    ],
+  
   },
   {
     title: "Concursos",
-    url: "#",
+    url: "/admin/concursos",
     icon: IconClipboardList,
-    items: [
-      { title: "Listar Concursos", url: "/admin/concursos" },
-      { title: "Criar Concurso", url: "/admin/concursos/criar" },
-      { title: "Encerrados", url: "/admin/concursos/encerrados" },
-    ],
+   
   },
   {
     title: "Tipos de Questão",
-    url: "#",
+    url: "/admin/tipos-questao",
     icon: IconBrain,
-    items: [
-      { title: "Listar Tipos", url: "/admin/tipos-questao" },
-      { title: "Criar Tipo", url: "/admin/tipos-questao/criar" },
-    ],
+    
   },
   {
     title: "Assuntos",
-    url: "#",
+    url: "/admin/assuntos",
     icon: IconBookmark,
-    items: [
-      { title: "Listar Assuntos", url: "/admin/assuntos" },
-      { title: "Criar Assunto", url: "/admin/assuntos/criar" },
-      { title: "Tópicos e Subtópicos", url: "/admin/assuntos/subtopicos" },
-    ],
+   
   },
   {
     title: "Cadernos",
@@ -262,7 +235,7 @@ export function AppSidebar({ showAdmin = false, ...props }: AppSidebarProps) {
               className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
               <IconInnerShadowTop className="size-5!" />
-              <span className="text-base font-semibold">Concurso Master</span>
+              <span className="text-base font-semibold">PLataforma</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

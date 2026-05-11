@@ -7,8 +7,8 @@ import { Button } from "@workspace/ui/components/button"
 import { Badge } from "@workspace/ui/components/badge"
 import { Separator } from "@workspace/ui/components/separator"
 import { createAdminNotebook, updateAdminNotebook } from "@/actions/admin-notebooks"
+import { createAdminQuestion, type CreateAdminQuestionPayload } from "@/actions/admin-questions"
 import { NotebookBasicInfo } from "@/components/admin/cadernos/notebook-basic-info"
-import { NotebookAccessSettings } from "@/components/admin/cadernos/notebook-access-settings"
 import { NotebookQuestionPicker } from "@/components/admin/cadernos/notebook-question-picker"
 import { NotebookResolutionSettings } from "@/components/admin/cadernos/notebook-resolution-settings"
 
@@ -45,17 +45,19 @@ export interface NotebookQuestionOption {
         isCorrect: boolean
         explanation: string | null
     }[]
+    isPending?: boolean
+}
+
+export interface PendingQuestion {
+    tempId: string
+    payload: CreateAdminQuestionPayload
 }
 
 export interface NotebookQuestionContext {
-    carreiraId: string
-    carreiraLabel: string
     concursoId: string
     concursoLabel: string
     disciplinaId: string
     disciplinaLabel: string
-    dificuldadeId: string
-    ano: string
 }
 
 interface CreateNotebookFormProps {
@@ -64,10 +66,8 @@ interface CreateNotebookFormProps {
     initialValues?: Partial<NotebookFormState>
     initialSelectedQuestionIds?: string[]
     options: {
-        carreiras: FilterOption[]
         concursos: FilterOption[]
         disciplinas: FilterOption[]
-        dificuldades: FilterOption[]
         tiposQuestao: NotebookQuestionTypeOption[]
     }
     questions: NotebookQuestionOption[]
@@ -76,13 +76,11 @@ interface CreateNotebookFormProps {
 export interface NotebookFormState {
     nome: string
     descricao: string
-    carreiraId: string
     concursoId: string
     disciplinaId: string
-    dificuldade: string
-    ano: string
     disponivel: boolean
     destaqueHome: boolean
+    pendingQuestions: PendingQuestion[]
     permitirComentarios: boolean
     permitirRanking: boolean
     modoResolucao: "study" | "simulated"
@@ -97,13 +95,11 @@ export interface NotebookFormState {
 const initialForm: NotebookFormState = {
     nome: "",
     descricao: "",
-    carreiraId: "",
     concursoId: "",
     disciplinaId: "",
-    dificuldade: "",
-    ano: String(new Date().getFullYear()),
     disponivel: true,
     destaqueHome: false,
+    pendingQuestions: [],
     permitirComentarios: true,
     permitirRanking: true,
     modoResolucao: "study",
@@ -124,7 +120,7 @@ export function CreateNotebookForm({
     questions,
 }: CreateNotebookFormProps) {
     const router = useRouter()
-    const [isWizardMode, setIsWizardMode] = React.useState(false)
+    const [isWizardMode, setIsWizardMode] = React.useState(true)
     const [step, setStep] = React.useState(1)
     const [form, setForm] = React.useState<NotebookFormState>(() => ({
         ...initialForm,
@@ -134,7 +130,7 @@ export function CreateNotebookForm({
     const [selectedQuestionIds, setSelectedQuestionIds] = React.useState<string[]>(initialSelectedQuestionIds)
     const [error, setError] = React.useState<string | null>(null)
     const [isPending, startTransition] = React.useTransition()
-    const totalSteps = 4
+    const totalSteps = 3
 
     const updateField = <K extends keyof NotebookFormState>(field: K, value: NotebookFormState[K]) => {
         setError(null)
@@ -143,28 +139,46 @@ export function CreateNotebookForm({
 
     const nextStep = () => setStep(prev => Math.min(prev + 1, totalSteps))
     const prevStep = () => setStep(prev => Math.max(prev - 1, 1))
-    const anoReferencia = Number.parseInt(form.ano, 10)
     const optionLabel = (items: FilterOption[], value: string) =>
         items.find((item) => item.value === value)?.label ?? ""
+
+    // Automação do Título do Caderno
+    React.useEffect(() => {
+        if (!form.concursoId || !form.disciplinaId) return
+
+        const concursoLabel = optionLabel(options.concursos, form.concursoId)
+        const disciplinaLabel = optionLabel(options.disciplinas, form.disciplinaId)
+
+        if (concursoLabel && disciplinaLabel) {
+            // Formato esperado: "Banca • Nome Ano • Cargo • Carreira"
+            const parts = concursoLabel.split(" • ")
+            const nomeAno = parts[1] || ""
+            const cargo = parts[2] || "Geral"
+
+            const autoTitle = `${nomeAno} • ${disciplinaLabel} • ${cargo}`
+            
+            // Só atualiza se o nome estiver vazio ou se parecer um nome gerado automaticamente
+            // Para simplificar e atender o "Título do Caderno (automaticamente)", vamos sempre atualizar
+            setForm(prev => ({ ...prev, nome: autoTitle }))
+        }
+    }, [form.concursoId, form.disciplinaId])
     const questionContext: NotebookQuestionContext = {
-        carreiraId: form.carreiraId,
-        carreiraLabel: optionLabel(options.carreiras, form.carreiraId),
         concursoId: form.concursoId,
-        concursoLabel: optionLabel(options.concursos, form.concursoId),
+        concursoLabel: (() => {
+            const label = optionLabel(options.concursos, form.concursoId)
+            if (!label) return ""
+            const parts = label.split(" • ")
+            return parts[1] || label // Pega apenas o "Nome Ano"
+        })(),
         disciplinaId: form.disciplinaId,
         disciplinaLabel: optionLabel(options.disciplinas, form.disciplinaId),
-        dificuldadeId: form.dificuldade,
-        ano: form.ano,
     }
 
     const buildNotebookPayload = (asDraft = false, questionIds = selectedQuestionIds) => ({
         nome: form.nome,
         descricao: form.descricao,
-        carreiraId: form.carreiraId,
         concursoId: form.concursoId,
         disciplinaId: form.disciplinaId,
-        dificuldadeId: form.dificuldade,
-        anoReferencia: Number.isFinite(anoReferencia) ? anoReferencia : null,
         visibilidade: asDraft ? "privado" : "publico",
         questionIds,
     } as const)
@@ -174,7 +188,25 @@ export function CreateNotebookForm({
 
         startTransition(async () => {
             try {
-                const payload = buildNotebookPayload(asDraft)
+                let finalQuestionIds = [...selectedQuestionIds]
+
+                // 1. Salvar questões inéditas pendentes primeiro
+                if (form.pendingQuestions.length > 0) {
+                    const savedQuestions = await Promise.all(
+                        form.pendingQuestions.map(async (pending) => {
+                            const questao = await createAdminQuestion(pending.payload)
+                            return { tempId: pending.tempId, realId: questao.id }
+                        })
+                    )
+
+                    // Substituir IDs temporários pelos reais no array final
+                    finalQuestionIds = finalQuestionIds.map(id => {
+                        const saved = savedQuestions.find(s => s.tempId === id)
+                        return saved ? saved.realId : id
+                    })
+                }
+
+                const payload = buildNotebookPayload(asDraft, finalQuestionIds)
 
                 if (mode === "edit" && notebookId) {
                     await updateAdminNotebook(notebookId, payload)
@@ -197,20 +229,16 @@ export function CreateNotebookForm({
         ? step === 1
             ? "Informações Básicas"
             : step === 2
-                ? "Configurações de Acesso"
-                : step === 3
-                    ? "Seleção de Questões"
-                    : "Regras de Resolução"
+                ? "Seleção de Questões"
+                : "Regras de Resolução"
         : "Visão Geral do Caderno"
 
     const description = isWizardMode
         ? step === 1
             ? "Defina a identidade do novo caderno oficial."
             : step === 2
-                ? "Configure visibilidade e engajamento."
-                : step === 3
-                    ? "Curadoria técnica do banco de questões."
-                    : "Defina o comportamento pedagógico do sistema."
+                ? "Curadoria técnica do banco de questões."
+                : "Defina o comportamento pedagógico do sistema."
         : "Edite todas as etapas do caderno em uma única página."
 
     const renderStepContent = (stepNumber: number) => {
@@ -225,35 +253,51 @@ export function CreateNotebookForm({
                 )
             case 2:
                 return (
-                    <NotebookAccessSettings
-                        values={form}
-                        onChange={updateField}
-                    />
-                )
-            case 3:
-                return (
                     <NotebookQuestionPicker
-                        questions={availableQuestions}
+                        questions={[...availableQuestions, ...form.pendingQuestions.map(p => ({
+                            id: p.tempId,
+                            code: "PENDENTE",
+                            text: p.payload.enunciado,
+                            supportText: p.payload.textoApoio || null,
+                            resolution: p.payload.resolucao || null,
+                            board: "Inédita",
+                            institution: p.payload.instituicao || null,
+                            career: null,
+                            subject: null,
+                            topic: null,
+                            year: p.payload.ano,
+                            educationLevel: "Nível não informado",
+                            discipline: "Pendente",
+                            difficulty: "medio",
+                            isUnique: true,
+                            isPending: true,
+                            alternatives: p.payload.alternativas.map((alt, idx) => ({
+                                id: String(idx),
+                                letter: alt.letter,
+                                text: alt.text,
+                                isCorrect: alt.isCorrect,
+                                explanation: alt.explanation || null
+                            }))
+                        }))]}
                         context={questionContext}
                         questionTypes={options.tiposQuestao}
                         selectedQuestionIds={selectedQuestionIds}
                         onSelectedQuestionIdsChange={setSelectedQuestionIds}
-                        onQuestionCreated={async (question) => {
+                        onPendingQuestionCreated={(pending) => {
+                            updateField("pendingQuestions", [...form.pendingQuestions, pending])
+                            setSelectedQuestionIds(prev => [...prev, pending.tempId])
+                        }}
+                        onQuestionCreated={(question) => {
                             const nextQuestionIds = selectedQuestionIds.includes(question.id)
                                 ? selectedQuestionIds
                                 : [...selectedQuestionIds, question.id]
 
                             setAvailableQuestions((prev) => [question, ...prev.filter((item) => item.id !== question.id)])
                             setSelectedQuestionIds(nextQuestionIds)
-
-                            if (mode === "edit" && notebookId) {
-                                await updateAdminNotebook(notebookId, buildNotebookPayload(false, nextQuestionIds))
-                                router.refresh()
-                            }
                         }}
                     />
                 )
-            case 4:
+            case 3:
                 return (
                     <NotebookResolutionSettings
                         values={form}
@@ -266,7 +310,7 @@ export function CreateNotebookForm({
     }
 
     return (
-        <div className="relative min-h-screen bg-background pb-10 max-w-7xl mx-auto w-full">
+        <div className="relative min-h-screen bg-background pb-10 max-w-8xl mx-auto w-full">
             {/* Header Compacto */}
             <div className="p-8 pt-6 space-y-4">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -285,30 +329,11 @@ export function CreateNotebookForm({
                     </div>
 
                     <div className="flex flex-col items-start md:items-end gap-3">
-                        <div className="flex items-center gap-1 rounded-xl border bg-muted/40 p-1">
-                            <Button
-                                variant={!isWizardMode ? "secondary" : "ghost"}
-                                size="sm"
-                                onClick={() => setIsWizardMode(false)}
-                                className="h-8 gap-2 rounded-lg text-xs font-semibold"
-                            >
-                                <LayoutList className="h-3.5 w-3.5" />
-                                Visão Geral
-                            </Button>
-                            <Button
-                                variant={isWizardMode ? "secondary" : "ghost"}
-                                size="sm"
-                                onClick={() => setIsWizardMode(true)}
-                                className="h-8 gap-2 rounded-lg text-xs font-semibold"
-                            >
-                                <ListOrdered className="h-3.5 w-3.5" />
-                                Passo a Passo
-                            </Button>
-                        </div>
+                        
 
                         {isWizardMode && (
                             <div className="flex gap-1.5">
-                                {[1, 2, 3, 4].map((s) => (
+                                {[1, 2, 3].map((s) => (
                                     <div
                                         key={s}
                                         className={`h-1.5 rounded-full transition-all duration-300 ${s <= step ? 'w-10 bg-primary' : 'w-4 bg-muted'}`}
@@ -377,8 +402,18 @@ export function CreateNotebookForm({
                             </Button>
                         )}
 
-                        <Button variant="ghost" size="icon" className="h-9 w-9">
-                            <Eye className="w-4 h-4 text-muted-foreground hover:text-primary" />
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-9 w-9"
+                            onClick={() => setIsWizardMode(!isWizardMode)}
+                            title={isWizardMode ? "Ver página única" : "Voltar para o modo passo a passo"}
+                        >
+                            {isWizardMode ? (
+                                <LayoutList className="w-4 h-4 text-muted-foreground hover:text-primary" />
+                            ) : (
+                                <Eye className="w-4 h-4 text-primary" />
+                            )}
                         </Button>
                     </div>
                 </div>
@@ -390,7 +425,7 @@ export function CreateNotebookForm({
                     renderStepContent(step)
                 ) : (
                     <div className="space-y-8">
-                        {[1, 2, 3, 4].map((stepNumber) => (
+                        {[1, 2, 3].map((stepNumber) => (
                             <div key={stepNumber}>{renderStepContent(stepNumber)}</div>
                         ))}
                     </div>

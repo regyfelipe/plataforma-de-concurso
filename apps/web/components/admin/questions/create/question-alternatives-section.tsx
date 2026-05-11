@@ -29,7 +29,7 @@ export function QuestionAlternativesSection({
     canRemove,
 }: QuestionAlternativesSectionProps) {
     return (
-        <section className="space-y-4">
+        <section className="space-y-2">
             <div className="flex items-center gap-2 px-1">
                 <div className="h-6 w-6 rounded-md border bg-muted flex items-center justify-center">
                     <span className="text-xs font-medium">3</span>
@@ -37,7 +37,7 @@ export function QuestionAlternativesSection({
                 <h2 className="text-sm font-medium text-muted-foreground">Alternativas</h2>
             </div>
             <Card>
-                <CardContent className="p-6 space-y-3">
+                <CardContent className="p-2 space-y-2">
                     {alternativas.map((alt) => (
                         <div key={alt.id} className="flex gap-3">
                             {/* Letra / toggle gabarito */}
@@ -45,7 +45,7 @@ export function QuestionAlternativesSection({
                                 type="button"
                                 onClick={() => onToggleCorrect(alt.id)}
                                 className={cn(
-                                    "shrink-0 h-9 w-9 rounded-md border flex items-center justify-center text-sm font-semibold transition-colors",
+                                    "shrink-0 h-[38px] w-[38px] rounded-md border flex items-center justify-center text-sm font-semibold transition-colors",
                                     alt.isCorrect
                                         ? "bg-foreground text-background border-foreground"
                                         : "bg-background hover:border-foreground/30"
@@ -61,7 +61,7 @@ export function QuestionAlternativesSection({
                                     onChange={(e) => onChangeText(alt.id, e.target.value)}
                                     placeholder={`Texto da alternativa ${alt.letter}...`}
                                     className={cn(
-                                        "min-h-[60px] resize-none pr-8 text-sm",
+                                        "min-h-[38px] py-2 resize-none pr-8 text-sm",
                                         alt.isCorrect && "border-foreground/30"
                                     )}
                                 />

@@ -491,12 +491,15 @@ model Banca {
 
 model Carreira {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  nome      String   @unique @db.VarChar(100)
+  nome      String   @db.VarChar(100)
   descricao String?
   iconUrl   String?
+  parentId  String?  @map("parent_id") @db.Uuid
   ativo     Boolean  @default(true)
   criadoEm  DateTime @default(now()) @map("criado_em")
 
+  parent    Carreira?  @relation("CarreiraHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children  Carreira[] @relation("CarreiraHierarchy")
   perfis    Perfil[]
   concursos Concurso[]
   questoes  Questao[]

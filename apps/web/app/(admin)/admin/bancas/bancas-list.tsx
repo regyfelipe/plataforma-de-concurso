@@ -17,7 +17,7 @@ import {
 } from "@workspace/ui/components/table"
 import { Input } from "@workspace/ui/components/input"
 import { Card, CardContent } from "@workspace/ui/components/card"
-import Link from "next/link"
+import { EditBancaModal } from "./edit-banca-modal"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -54,6 +54,7 @@ export function BancasList({
     const [search, setSearch] = React.useState("")
     const [statusFilter, setStatusFilter] = React.useState<StatusFilter>("all")
     const [deletingId, setDeletingId] = React.useState<string | null>(null)
+    const [editingItem, setEditingItem] = React.useState<BancaItem | null>(null)
 
     const filteredItems = React.useMemo(() => {
         return items.filter((item) => {
@@ -182,11 +183,14 @@ export function BancasList({
 
                                         <TableCell className="py-4 text-right pr-4">
                                             <div className="flex items-center justify-end gap-1">
-                                                <Link href={item.editHref}>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                        <Edit2 className="w-3.5 h-3.5" />
-                                                    </Button>
-                                                </Link>
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    className="h-8 w-8"
+                                                    onClick={() => setEditingItem(item)}
+                                                >
+                                                    <Edit2 className="w-3.5 h-3.5" />
+                                                </Button>
 
                                                 <AlertDialog>
                                                     <AlertDialogTrigger 
@@ -247,6 +251,13 @@ export function BancasList({
                     </div>
                 </CardContent>
             </Card>
+            {editingItem && (
+                <EditBancaModal 
+                    item={editingItem}
+                    open={!!editingItem}
+                    onOpenChange={(open) => !open && setEditingItem(null)}
+                />
+            )}
         </div>
     )
 }

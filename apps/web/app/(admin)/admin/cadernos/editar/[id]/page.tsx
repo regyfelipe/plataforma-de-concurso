@@ -50,12 +50,7 @@ export default async function EditarCadernoAdminPage({ params }: EditarCadernoAd
     const selectedQuestionIds = caderno.questoes.map((item) => item.questaoId)
     const firstQuestion = caderno.questoes[0]?.questao
 
-    const [carreiras, concursos, disciplinas, dificuldades, tiposQuestao, questoes] = await Promise.all([
-        prisma.carreira.findMany({
-            where: { ativo: true },
-            orderBy: { nome: "asc" },
-            select: { id: true, nome: true },
-        }),
+    const [concursos, disciplinas, tiposQuestao, questoes] = await Promise.all([
         prisma.concurso.findMany({
             where: { ativo: true },
             orderBy: [{ ano: "desc" }, { nome: "asc" }],
@@ -70,11 +65,6 @@ export default async function EditarCadernoAdminPage({ params }: EditarCadernoAd
             where: { ativo: true },
             orderBy: { nome: "asc" },
             select: { id: true, nome: true, code: true },
-        }),
-        prisma.dificuldade.findMany({
-            where: { ativo: true },
-            orderBy: { nome: "asc" },
-            select: { id: true, nome: true, slug: true },
         }),
         prisma.tipoQuestao.findMany({
             where: { ativo: true },
@@ -119,16 +109,12 @@ export default async function EditarCadernoAdminPage({ params }: EditarCadernoAd
             initialValues={{
                 nome: caderno.nome,
                 descricao: caderno.descricao ?? "",
-                carreiraId: caderno.carreiraId ?? firstQuestion?.carreiraId ?? "",
                 concursoId: caderno.concursoId ?? firstQuestion?.concursoId ?? "",
                 disciplinaId: caderno.disciplinaId ?? firstQuestion?.disciplinaId ?? "",
-                dificuldade: caderno.dificuldadeId ?? firstQuestion?.dificuldadeId ?? "",
-                ano: caderno.anoReferencia ? String(caderno.anoReferencia) : firstQuestion?.ano ? String(firstQuestion.ano) : String(new Date().getFullYear()),
                 disponivel: caderno.visibilidade === "publico",
             }}
             initialSelectedQuestionIds={selectedQuestionIds}
             options={{
-                carreiras: carreiras.map((carreira) => ({ label: carreira.nome, value: carreira.id })),
                 concursos: concursos.map((concurso) => ({
                     label: `${concurso.banca?.sigla ? `${concurso.banca.sigla} • ` : ""}${concurso.nome}${concurso.ano ? ` • ${concurso.ano}` : ""}`,
                     value: concurso.id,
@@ -136,10 +122,6 @@ export default async function EditarCadernoAdminPage({ params }: EditarCadernoAd
                 disciplinas: disciplinas.map((disciplina) => ({
                     label: `${disciplina.code} - ${disciplina.nome}`,
                     value: disciplina.id,
-                })),
-                dificuldades: dificuldades.map((dificuldade) => ({
-                    label: dificuldade.nome,
-                    value: dificuldade.id,
                 })),
                 tiposQuestao,
             }}

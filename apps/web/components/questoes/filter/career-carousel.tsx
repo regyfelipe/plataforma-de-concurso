@@ -1,6 +1,6 @@
 "use client"
 
-import * as React from "react"
+import { useState, useMemo, useCallback, useRef } from "react"
 import { Shield, Target, Landmark, Scale, ChevronLeft, ChevronRight } from "lucide-react"
 
 
@@ -26,7 +26,7 @@ const ICONS = {
 }
 
 export function CareerCarousel({ activeId = 'all', onSelect, concursos }: CareerCarouselProps) {
-    const scrollRef = React.useRef<HTMLDivElement>(null)
+    const scrollRef = useRef<HTMLDivElement>(null)
     const items = concursos && concursos.length > 0
         ? [
             { id: "all", name: "Todos", displayName: "Todos", displayYear: "", status: "GERAL", icon: Target, logoUrl: "" },

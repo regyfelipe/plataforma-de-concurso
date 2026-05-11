@@ -30,7 +30,7 @@ export default async function DificuldadePage() {
   return (
     <DificuldadeList
         items={items}
-        createAction={<CreateDificuldadeModal />}
+        createAction={<CreateDificuldadeModal key="create-dificuldade" />}
         onDelete={handleDelete}
     />
   )

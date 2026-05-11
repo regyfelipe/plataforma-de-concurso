@@ -1,9 +1,11 @@
 "use client"
 
+import { useState } from "react"
 import { Plus, Search, Filter, Edit2, Trash2, Library, AlertTriangle, User, BookOpen } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@workspace/ui/components/button"
 import { Badge } from "@workspace/ui/components/badge"
+import { toast } from "sonner"
 import {
     Table,
     TableBody,
@@ -38,9 +40,24 @@ export interface AdminNotebookListItem {
 
 interface NotebooksAdminListProps {
     notebooks: AdminNotebookListItem[]
+    onDelete: (id: string) => Promise<void>
 }
 
-export function NotebooksAdminList({ notebooks }: NotebooksAdminListProps) {
+export function NotebooksAdminList({ notebooks, onDelete }: NotebooksAdminListProps) {
+    const [deletingId, setDeletingId] = useState<string | null>(null)
+
+    const handleConfirmDelete = async (id: string) => {
+        setDeletingId(id)
+        try {
+            await onDelete(id)
+            toast.success("Caderno excluído com sucesso!")
+        } catch (error) {
+            toast.error("Erro ao excluir o caderno.")
+        } finally {
+            setDeletingId(null)
+        }
+    }
+
     return (
         <div className="flex-1 space-y-6 p-8 pt-6 bg-background">
             {/* Header Master */}
@@ -168,8 +185,12 @@ export function NotebooksAdminList({ notebooks }: NotebooksAdminListProps) {
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter className="mt-4">
                                                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                                                Confirmar Exclusão
+                                                            <AlertDialogAction 
+                                                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                                onClick={() => handleConfirmDelete(item.id)}
+                                                                disabled={deletingId === item.id}
+                                                            >
+                                                                {deletingId === item.id ? "Excluindo..." : "Confirmar Exclusão"}
                                                             </AlertDialogAction>
                                                         </AlertDialogFooter>
                                                     </AlertDialogContent>

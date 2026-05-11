@@ -31,7 +31,7 @@ export default async function BancasPage() {
     return (
         <BancasList
             items={items}
-            createAction={<CreateBancaModal />}
+            createAction={<CreateBancaModal key="create-banca-modal" />}
             onDelete={handleDelete}
         />
     )

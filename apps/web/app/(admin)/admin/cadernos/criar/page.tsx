@@ -16,12 +16,7 @@ function htmlToText(value?: string | null) {
 }
 
 export default async function CriarCadernoStepsPage() {
-  const [carreiras, concursos, disciplinas, dificuldades, tiposQuestao, questoes] = await Promise.all([
-    prisma.carreira.findMany({
-      where: { ativo: true },
-      orderBy: { nome: "asc" },
-      select: { id: true, nome: true },
-    }),
+  const [concursos, disciplinas, tiposQuestao, questoes] = await Promise.all([
     prisma.concurso.findMany({
       where: { ativo: true },
       orderBy: [{ ano: "desc" }, { nome: "asc" }],
@@ -29,18 +24,15 @@ export default async function CriarCadernoStepsPage() {
         id: true,
         nome: true,
         ano: true,
+        cargo: true,
         banca: { select: { sigla: true } },
+        carreira: { select: { nome: true } },
       },
     }),
     prisma.disciplina.findMany({
       where: { ativo: true },
       orderBy: { nome: "asc" },
       select: { id: true, nome: true, code: true },
-    }),
-    prisma.dificuldade.findMany({
-      where: { ativo: true },
-      orderBy: { nome: "asc" },
-      select: { id: true, nome: true, slug: true },
     }),
     prisma.tipoQuestao.findMany({
       where: { ativo: true },
@@ -54,7 +46,15 @@ export default async function CriarCadernoStepsPage() {
       },
       orderBy: { criadoEm: "desc" },
       take: 100,
-      include: {
+      select: {
+        id: true,
+        code: true,
+        enunciado: true,
+        textoApoio: true,
+        resolucao: true,
+        instituicao: true,
+        ano: true,
+        isInedita: true,
         disciplina: { select: { nome: true } },
         assunto: { select: { nome: true } },
         topico: { select: { nome: true } },
@@ -74,18 +74,16 @@ export default async function CriarCadernoStepsPage() {
   return (
     <CreateNotebookForm
       options={{
-        carreiras: carreiras.map((carreira) => ({ label: carreira.nome, value: carreira.id })),
-        concursos: concursos.map((concurso) => ({
-          label: `${concurso.banca?.sigla ? `${concurso.banca.sigla} • ` : ""}${concurso.nome}${concurso.ano ? ` • ${concurso.ano}` : ""}`,
-          value: concurso.id,
-        })),
+        concursos: concursos.map((concurso) => {
+          const hasCarreira = concurso.carreira?.nome && concurso.carreira.nome !== concurso.nome
+          return {
+            label: `${concurso.banca?.sigla ?? "Geral"} • ${concurso.nome}${concurso.ano ? ` ${concurso.ano}` : ""} • ${concurso.cargo ?? "Geral"}${hasCarreira ? ` • ${concurso.carreira?.nome}` : ""}`,
+            value: concurso.id,
+          }
+        }),
         disciplinas: disciplinas.map((disciplina) => ({
-          label: `${disciplina.code} - ${disciplina.nome}`,
+          label: disciplina.nome,
           value: disciplina.id,
-        })),
-        dificuldades: dificuldades.map((dificuldade) => ({
-          label: dificuldade.nome,
-          value: dificuldade.id,
         })),
         tiposQuestao,
       }}

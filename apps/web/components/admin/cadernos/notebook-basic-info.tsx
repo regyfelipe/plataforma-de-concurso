@@ -1,6 +1,6 @@
 "use client"
 
-import { Layout, Library, AlignLeft, Calendar } from "lucide-react"
+import { Layout, Library, AlignLeft } from "lucide-react"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { Textarea } from "@workspace/ui/components/textarea"
@@ -8,16 +8,14 @@ import { FilterSelect } from "@/components/questoes/filter/filter-select"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@workspace/ui/components/card"
 import { Separator } from "@workspace/ui/components/separator"
 import type { NotebookFormState } from "@/app/(admin)/admin/cadernos/criar/create-notebook-form"
-
+ 
 type FilterOption = { label: string; value: string }
-
+ 
 interface NotebookBasicInfoProps {
     values: NotebookFormState
     options: {
-        carreiras: FilterOption[]
         concursos: FilterOption[]
         disciplinas: FilterOption[]
-        dificuldades: FilterOption[]
     }
     onChange: <K extends keyof NotebookFormState>(field: K, value: NotebookFormState[K]) => void
 }
@@ -49,7 +47,7 @@ export function NotebookBasicInfo({ values, options, onChange }: NotebookBasicIn
                         <Input
                             value={values.nome}
                             onChange={(event) => onChange("nome", event.target.value)}
-                            placeholder="Ex: Caderno PF 2026 - Direito Constitucional"
+                            placeholder="Ex: PRF 2027 • Direito Constitucional • Agente Administrativo"
                             className="h-12 text-sm"
                         />
                     </div>
@@ -69,21 +67,9 @@ export function NotebookBasicInfo({ values, options, onChange }: NotebookBasicIn
                     </div>
                 </div>
 
-                <Separator />
 
                 {/* Grid de Metadados */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="space-y-2">
-                        <FilterSelect 
-                            label="Carreira"
-                            placeholder="Selecione a Carreira"
-                            options={options.carreiras}
-                            isMulti={false}
-                            value={values.carreiraId}
-                            onValueChange={(value) => onChange("carreiraId", value)}
-                        />
-                    </div>
-
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                         <FilterSelect 
                             label="Concurso Base"
@@ -94,7 +80,7 @@ export function NotebookBasicInfo({ values, options, onChange }: NotebookBasicIn
                             onValueChange={(value) => onChange("concursoId", value)}
                         />
                     </div>
-
+ 
                     <div className="space-y-2">
                         <FilterSelect 
                             label="Disciplina Principal"
@@ -103,30 +89,6 @@ export function NotebookBasicInfo({ values, options, onChange }: NotebookBasicIn
                             isMulti={false}
                             value={values.disciplinaId}
                             onValueChange={(value) => onChange("disciplinaId", value)}
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <FilterSelect 
-                            label="Dificuldade"
-                            placeholder="Nível"
-                            options={options.dificuldades}
-                            isMulti={false}
-                            value={values.dificuldade}
-                            onValueChange={(value) => onChange("dificuldade", value)}
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label className="text-xs font-semibold flex items-center gap-2">
-                            <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                            Ano de Referência
-                        </Label>
-                        <Input
-                            value={values.ano}
-                            onChange={(event) => onChange("ano", event.target.value)}
-                            placeholder="2024"
-                            className="h-10"
                         />
                     </div>
                 </div>

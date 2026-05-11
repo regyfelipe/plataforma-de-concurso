@@ -17,7 +17,7 @@ import {
 } from "@workspace/ui/components/table"
 import { Input } from "@workspace/ui/components/input"
 import { Card, CardContent } from "@workspace/ui/components/card"
-import Link from "next/link"
+import { EditDificuldadeModal } from "./edit-dificuldade-modal"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -53,6 +53,7 @@ export function DificuldadeList({
     const [search, setSearch] = React.useState("")
     const [statusFilter, setStatusFilter] = React.useState<StatusFilter>("all")
     const [deletingId, setDeletingId] = React.useState<string | null>(null)
+    const [editingItem, setEditingItem] = React.useState<DificuldadeItem | null>(null)
 
     const filteredItems = React.useMemo(() => {
         return items.filter((item) => {
@@ -174,11 +175,14 @@ export function DificuldadeList({
 
                                         <TableCell className="py-4 text-right pr-4">
                                             <div className="flex items-center justify-end gap-1">
-                                                <Link href={item.editHref}>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                        <Edit2 className="w-3.5 h-3.5" />
-                                                    </Button>
-                                                </Link>
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    className="h-8 w-8"
+                                                    onClick={() => setEditingItem(item)}
+                                                >
+                                                    <Edit2 className="w-3.5 h-3.5" />
+                                                </Button>
 
                                                 <AlertDialog>
                                                     <AlertDialogTrigger 
@@ -239,6 +243,13 @@ export function DificuldadeList({
                     </div>
                 </CardContent>
             </Card>
+            {editingItem && (
+                <EditDificuldadeModal 
+                    item={editingItem}
+                    open={!!editingItem}
+                    onOpenChange={(open) => !open && setEditingItem(null)}
+                />
+            )}
         </div>
     )
 }

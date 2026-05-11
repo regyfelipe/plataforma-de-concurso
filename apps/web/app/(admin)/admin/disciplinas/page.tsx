@@ -133,7 +133,7 @@ export default async function DisciplinasPage() {
     return (
         <DisciplinasList
             items={items}
-            createAction={<CreateDisciplinaModal />}
+            createAction={<CreateDisciplinaModal key="create-disciplina" />}
             onDelete={handleDelete}
             onCreateAssunto={handleCreateAssunto}
             onCreateTopico={handleCreateTopico}

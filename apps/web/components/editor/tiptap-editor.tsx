@@ -19,6 +19,7 @@ interface TiptapEditorProps {
     content: string
     onChange: (content: string) => void
     placeholder?: string
+    minHeight?: string
 }
 
 const MenuBar = ({ editor }: { editor: any }) => {
@@ -104,7 +105,7 @@ const MenuBar = ({ editor }: { editor: any }) => {
     )
 }
 
-export function TiptapEditor({ content, onChange, placeholder }: TiptapEditorProps) {
+export function TiptapEditor({ content, onChange, placeholder, minHeight = "80px" }: TiptapEditorProps) {
     const editor = useEditor({
         extensions: [
             StarterKit,
@@ -116,7 +117,8 @@ export function TiptapEditor({ content, onChange, placeholder }: TiptapEditorPro
         },
         editorProps: {
             attributes: {
-                class: 'tiptap-content focus:outline-none min-h-[150px] px-4 py-3 text-[13px] font-medium leading-relaxed',
+                class: `tiptap-content focus:outline-none px-4 py-3 text-[13px] font-medium leading-relaxed`,
+                style: `min-height: ${minHeight};`,
             },
         },
     })

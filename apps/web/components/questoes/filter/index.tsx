@@ -1,6 +1,6 @@
 "use client"
 
-import * as React from "react"
+import { useState, useMemo, useCallback } from "react"
 import { Search, Plus, BookOpen, Trash2, X, ChevronUp, ChevronDown, Filter as FilterIcon } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -41,9 +41,10 @@ interface QuestionFilterOptions {
         status?: string
         logoUrl?: string
         icon?: "shield" | "scale" | "landmark" | "target"
+        cargo?: string
     }[]
     cargos?: FilterOption[]
-    carreiras?: FilterOption[]
+    carreiras?: { label: string; value: string; parentId: string | null }[]
     escolaridades?: FilterOption[]
     anos?: FilterOption[]
     dificuldades?: FilterOption[]
@@ -54,9 +55,15 @@ interface QuestionFilterProps {
 }
 
 export function QuestionFilter({ options }: QuestionFilterProps) {
-    const [isExpanded, setIsExpanded] = React.useState(true)
-    const [selectedConcurso, setSelectedConcurso] = React.useState('all')
-    const [activeFilters, setActiveFilters] = React.useState<ActiveFilter[]>([])
+    const [isExpanded, setIsExpanded] = useState(true)
+    const [selectedConcurso, setSelectedConcurso] = useState('all')
+    const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([])
+    
+    // Estados para Hierarquia de Carreira
+    const [selectedCarreira, setSelectedCarreira] = useState("")
+    const [selectedSubcarreira, setSelectedSubcarreira] = useState("")
+    const [selectedOrgao, setSelectedOrgao] = useState("")
+    const [selectedCargo, setSelectedCargo] = useState("")
 
     const removeFilter = (id: string) => {
         if (id.startsWith('concurso-')) setSelectedConcurso('all')
@@ -133,8 +140,59 @@ export function QuestionFilter({ options }: QuestionFilterProps) {
                     {/* Grid secundário de filtros */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 ">
                         <FilterSelect label="Bancas" placeholder="Selecione a Bancas" options={options?.bancas ?? BANCAS_MOCK} />
-                        <FilterSelect label="Carreira" placeholder="Selecione a carreira" options={options?.carreiras ?? []} />
-                        <FilterSelect label="Cargo" placeholder="Selecione o cargo" options={options?.cargos ?? []} />
+                        
+                        {/* Hierarquia de Carreiras */}
+                        <FilterSelect 
+                            label="Carreira" 
+                            placeholder="Ex: Policial" 
+                            options={options?.carreiras?.filter(c => !c.parentId) ?? []} 
+                            isMulti={false}
+                            onValueChange={(val) => {
+                                setSelectedCarreira(val)
+                                setSelectedSubcarreira("")
+                                setSelectedOrgao("")
+                                setSelectedCargo("")
+                            }}
+                        />
+                        <FilterSelect 
+                            label="Subcarreira" 
+                            placeholder={selectedCarreira ? "Ex: Militar" : "Selecione Carreira"} 
+                            options={options?.carreiras?.filter(c => c.parentId === selectedCarreira) ?? []} 
+                            disabled={!selectedCarreira}
+                            isMulti={false}
+                            onValueChange={(val) => {
+                                setSelectedSubcarreira(val)
+                                setSelectedOrgao("")
+                                setSelectedCargo("")
+                            }}
+                        />
+                        <FilterSelect 
+                            label="Órgão / Estado" 
+                            placeholder={selectedSubcarreira ? "Ex: PMCE" : "Selecione Subcarreira"} 
+                            options={options?.carreiras?.filter(c => c.parentId === selectedSubcarreira) ?? []} 
+                            disabled={!selectedSubcarreira}
+                            isMulti={false}
+                            onValueChange={(val) => {
+                                setSelectedOrgao(val)
+                                setSelectedCargo("")
+                            }}
+                        />
+
+                        <FilterSelect 
+                            label="Cargo" 
+                            placeholder={selectedOrgao ? "Selecione o cargo" : "Selecione Órgão"} 
+                            options={
+                                selectedOrgao 
+                                    ? options?.carreiras?.filter(c => c.parentId === selectedOrgao) ?? []
+                                    : (selectedConcurso !== 'all' 
+                                        ? options?.concursos?.filter(c => c.id === selectedConcurso && c.cargo)
+                                            .map(c => ({ label: c.cargo!, value: c.cargo! })) ?? []
+                                        : options?.cargos ?? [])
+                            }
+                            disabled={!selectedOrgao && selectedConcurso === 'all'}
+                            isMulti={false}
+                            onValueChange={setSelectedCargo}
+                        />
                         <FilterSelect label="Escolaridade" placeholder="Selecione a Escolaridade" options={options?.escolaridades ?? ESCOLARIDADE_MOCK} />
                         <FilterSelect label="Ano" placeholder="Selecione o Ano" options={options?.anos ?? ANOS_MOCK} />
                         <FilterSelect label="Número de Alternativas" placeholder="4 ou 5" options={ALTERNATIVAS_MOCK} />

@@ -1,5 +1,6 @@
 import { prisma } from "@workspace/database"
 import { NotebooksAdminList } from "./notebooks-admin-list"
+import { deleteAdminNotebook } from "@/actions/admin-notebooks"
 
 export default async function ListarCadernosAdminPage() {
     const cadernos = await prisma.caderno.findMany({
@@ -33,6 +34,11 @@ export default async function ListarCadernosAdminPage() {
         },
     })
 
+    async function handleDelete(id: string) {
+        "use server"
+        await deleteAdminNotebook(id)
+    }
+
     return (
         <NotebooksAdminList
             notebooks={cadernos.map((caderno) => ({
@@ -43,6 +49,7 @@ export default async function ListarCadernosAdminPage() {
                 questions: caderno._count.questoes,
                 status: caderno.visibilidade === "publico" ? "published" : "draft",
             }))}
+            onDelete={handleDelete}
         />
     )
 }

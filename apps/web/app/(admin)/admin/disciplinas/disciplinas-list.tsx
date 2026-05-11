@@ -18,7 +18,7 @@ import {
 } from "@workspace/ui/components/table"
 import { Input } from "@workspace/ui/components/input"
 import { Card, CardContent } from "@workspace/ui/components/card"
-import Link from "next/link"
+import { EditDisciplinaModal } from "./edit-disciplina-modal"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -82,6 +82,7 @@ export function DisciplinasList({
     const [statusFilter, setStatusFilter] = React.useState<StatusFilter>("all")
     const [expandedIds, setExpandedIds] = React.useState<Set<string>>(new Set())
     const [deletingId, setDeletingId] = React.useState<string | null>(null)
+    const [editingItem, setEditingItem] = React.useState<DisciplinaItem | null>(null)
     const [inlineAdd, setInlineAdd] = React.useState<InlineAdd>(null)
     const [inlineValue, setInlineValue] = React.useState("")
     const [inlineSaving, setInlineSaving] = React.useState(false)
@@ -341,11 +342,14 @@ export function DisciplinasList({
                                                             </Button>
                                                         )}
 
-                                                        <Link href={item.editHref}>
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                                <Edit2 className="w-3.5 h-3.5" />
-                                                            </Button>
-                                                        </Link>
+                                                        <Button 
+                                                            variant="ghost" 
+                                                            size="icon" 
+                                                            className="h-8 w-8"
+                                                            onClick={() => setEditingItem(item)}
+                                                        >
+                                                            <Edit2 className="w-3.5 h-3.5" />
+                                                        </Button>
 
                                                         <AlertDialog>
                                                             <AlertDialogTrigger 
@@ -443,6 +447,13 @@ export function DisciplinasList({
                     </div>
                 </CardContent>
             </Card>
+            {editingItem && (
+                <EditDisciplinaModal 
+                    item={editingItem}
+                    open={!!editingItem}
+                    onOpenChange={(open) => !open && setEditingItem(null)}
+                />
+            )}
         </div>
     )
 }

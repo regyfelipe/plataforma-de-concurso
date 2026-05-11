@@ -42,7 +42,7 @@ export default async function CriarQuestaoPage() {
         prisma.concurso.findMany({
             where: { ativo: true },
             orderBy: [{ ano: "desc" }, { nome: "asc" }],
-            select: { id: true, nome: true, cargo: true, ano: true },
+            select: { id: true, nome: true, cargo: true, ano: true, bancaId: true, carreiraId: true },
         }),
         prisma.carreira.findMany({
             where: { ativo: true },
